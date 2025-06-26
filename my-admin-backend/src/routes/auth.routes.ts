@@ -12,16 +12,12 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
 
 router.post('/register', asyncHandler(authController.register));
 
-router.post(
-    '/login',
-    passport.authenticate('local', { session: false, failureMessage: true }),
+router.post('/login',
+    passport.authenticate('local'),
     asyncHandler(authController.login)
 );
 
-router.post('/refresh-token', asyncHandler(authController.refreshToken));
-
 router.post('/logout', isAuthenticated, asyncHandler(authController.logout));
-
 router.get('/me', isAuthenticated, asyncHandler(authController.me));
 
 export default router; 

@@ -5,6 +5,7 @@ import { hasPermission } from '../middlewares/permission.middleware';
 
 const router = Router();
 
+// Helper to wrap async route handlers and forward errors
 const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };

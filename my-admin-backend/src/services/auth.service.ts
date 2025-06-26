@@ -1,7 +1,6 @@
 import User, { IUser } from '../models/User';
 import Role from '../models/Role';
 import { Error } from 'mongoose';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 
 interface UserData {
     name: string;
@@ -34,18 +33,13 @@ export const registerUser = async (userData: UserData): Promise<IUser> => {
     return newUser;
 };
 
-export const loginUser = async (user: IUser): Promise<{ accessToken: string; refreshToken: string; user: IUser }> => {
-    const tokenPayload = { id: (user._id as any).toString(), role: (user.role as any).name };
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken(tokenPayload);
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
+export const loginUser = async (user: IUser): Promise<IUser> => {
     const loggedInUser = await User.findById(user._id).populate({
         path: 'role',
         populate: { path: 'permissions' }
     });
     if (!loggedInUser) throw new Error('User not found after login.');
-    return { accessToken, refreshToken, user: loggedInUser as IUser };
+    return loggedInUser;
 };
 
 export const logoutUser = async (userId: string): Promise<void> => {

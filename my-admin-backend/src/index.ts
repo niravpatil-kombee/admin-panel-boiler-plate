@@ -3,11 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import connectDB from './config/database';
-import { applyPassportStrategy } from './config/passport';
+import './config/passport';
 import authRoutes from './routes/auth.routes';
 import roleRoutes from './routes/role.routes';
 import permissionRoutes from './routes/permission.routes';
 import userRoutes from './routes/user.routes';
+import session from 'express-session';
 
 // Load environment variables
 dotenv.config();
@@ -17,11 +18,23 @@ const PORT = process.env.PORT || 5001;
 
 // Middlewares
 app.use(cors());
-app.use(express.json()); // for parsing application/json
-app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
+
+// Session must come before passport.session()
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 14 * 24 * 60 * 60 * 1000
+    } // set to true if using HTTPS
+}));
 
 app.use(passport.initialize());
-applyPassportStrategy(passport);
+app.use(passport.session());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
