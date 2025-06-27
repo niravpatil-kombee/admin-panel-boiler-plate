@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import roleRoutes from './routes/role.routes';
 import permissionRoutes from './routes/permission.routes';
 import userRoutes from './routes/user.routes';
+import productRoutes from './routes/product.routes';
 import session from 'express-session';
 
 // Load environment variables
@@ -17,7 +18,10 @@ const app: Application = express();
 const PORT = process.env.PORT || 5001;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true
+  }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
 
@@ -40,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
 
 // Health check route
 app.get('/api/health', (req: Request, res: Response) => {

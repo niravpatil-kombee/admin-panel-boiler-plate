@@ -13,40 +13,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const initializeAuth = async () => {
-            const accessToken = localStorage.getItem('accessToken');
-            if (accessToken) {
                 try {
                     const { user: fetchedUser } = await getMeAPI();
                     setUser(fetchedUser);
                 } catch (error) {
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                }
+                setUser(null);
             }
             setIsLoading(false);
         };
         initializeAuth();
     }, []);
 
-    const setSession = (accessToken: string | null, refreshToken: string | null) => {
-        if (accessToken && refreshToken) {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-        } else {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-        }
-    };
-
     const login = async (credentials: LoginCredentials) => {
-        const { accessToken, refreshToken, user } = await loginAPI(credentials);
-        setSession(accessToken, refreshToken);
-        setUser(user);
+        await loginAPI(credentials);
+        const { user: fetchedUser } = await getMeAPI();
+        setUser(fetchedUser);
         navigate('/dashboard');
     };
 
-    const logout = () => {
-        setSession(null, null);
+    const logout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        } catch {}
         setUser(null);
         navigate('/auth/login');
     };

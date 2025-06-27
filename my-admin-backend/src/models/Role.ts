@@ -1,13 +1,9 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model } from 'mongoose';
+import { IRole } from '../types';
 
-export interface IRole extends Document {
-    name: string;
-    permissions: Types.ObjectId[];
-}
-
-const RoleSchema: Schema = new Schema({
-    name: { type: String, required: true, unique: true },
-    permissions: [{ type: Schema.Types.ObjectId, ref: 'Permission' }],
+const RoleSchema = new Schema<IRole>({
+  name: { type: String, required: true, unique: true },
+  permissions: [{ type: Schema.Types.ObjectId, ref: 'Permission' }]
 }, { timestamps: true });
 
-export default model<IRole>('Role', RoleSchema); 
+export default model<IRole>('Role', RoleSchema);

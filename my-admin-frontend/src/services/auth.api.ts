@@ -16,7 +16,7 @@ export const registerAPI = async (userData: RegisterData) => {
 // And the corresponding API call here.
 // **Action Required in Backend (see step 2)**
 export const getMeAPI = async () => {
-    const { data } = await axios.get('/auth/me'); // This route needs to be created
+    const { data } = await axios.get('/auth/me');
     return data;
 }
 

@@ -8,6 +8,7 @@ import RoleListPage from '../pages/roles/RoleList';
 import ProductListPage from '../pages/products/ProductList';
 import UserFormPage from '../pages/users/UserForm';
 import RoleFormPage from '../pages/roles/RoleForm';
+import ProductFormPage from '../pages/products/ProductForm';
 
 export default function AppRouter() {
     const routes = useRoutes([
@@ -36,6 +37,8 @@ export default function AppRouter() {
                 { path: '/users/edit/:id', element: <UserFormPage /> },
                 { path: 'roles/new', element: <RoleFormPage /> },
                 { path: 'roles/edit/:id', element: <RoleFormPage /> },
+                { path: 'products/new', element: <ProductFormPage /> },
+                { path: 'products/edit/:id', element: <ProductFormPage /> },
             ]
         },
         { path: '*', element: <Navigate to="/" replace /> },
