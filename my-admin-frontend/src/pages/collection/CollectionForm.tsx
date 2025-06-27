@@ -5,6 +5,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { Collection, Product } from '../../types/product';
 import { createCollectionAPI, getCollectionByIdAPI, updateCollectionAPI } from '../../services/collection.api';
 import { getProductsAPI } from '../../services/product.api';
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const collectionSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  products: z.array(z.string()).optional(),
+});
 
 export default function CollectionFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +29,7 @@ export default function CollectionFormPage() {
       description: '',
       products: [],
     },
+    resolver: zodResolver(collectionSchema),
   });
   const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
 
@@ -58,7 +68,6 @@ export default function CollectionFormPage() {
       <Controller
         name="name"
         control={control}
-        rules={{ required: 'Name is required' }}
         render={({ field }) => (
           <TextField {...field} label="Collection Name" fullWidth sx={{ mb: 2 }} />
         )}

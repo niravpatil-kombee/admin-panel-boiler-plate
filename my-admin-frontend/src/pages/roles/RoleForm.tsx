@@ -4,6 +4,15 @@ import { Box, Button, Container, MenuItem, Paper, TextField, Typography, Circula
 import { useNavigate, useParams } from 'react-router-dom';
 import { getRoleByIdAPI, createRoleAPI, updateRoleAPI } from '../../services/role.api';
 import { getPermissionsAPI } from '../../services/permission.api'; 
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const roleSchema = z.object({
+  name: z.string().min(1, 'Role name is required'),
+  permissions: z.array(z.string()).optional(),
+});
+
+type RoleFormSchema = z.infer<typeof roleSchema>;
 
 export default function RoleFormPage() {
     const { id } = useParams<{ id: string }>();
@@ -12,7 +21,8 @@ export default function RoleFormPage() {
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RoleFormSchema>({
+        resolver: zodResolver(roleSchema),
         defaultValues: { name: '', permissions: [] }
     });
 
@@ -38,11 +48,16 @@ export default function RoleFormPage() {
         fetchData();
     }, [id, isEdit, reset]);
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: RoleFormSchema) => {
+        // Send permissions as string[]
+        const payload = {
+            name: data.name,
+            permissions: data.permissions ?? [],
+        };
         if (isEdit && id) {
-            await updateRoleAPI(id, data);
+            await updateRoleAPI(id, payload as any);
         } else {
-            await createRoleAPI(data);
+            await createRoleAPI(payload as any);
         }
         navigate('/roles');
     };
@@ -61,7 +76,6 @@ export default function RoleFormPage() {
                     <Controller
                         name="name"
                         control={control}
-                        rules={{ required: 'Role name is required' }}
                         render={({ field }) => (
                             <TextField {...field} label="Role Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }} />
                         )}

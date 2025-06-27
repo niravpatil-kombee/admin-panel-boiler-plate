@@ -1,4 +1,3 @@
-// ProductFormPage.tsx
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import {
   Box,
@@ -24,6 +23,37 @@ import {
 } from "../../services/product.api";
 import { getCategoriesAPI } from "../../services/category.api";
 import { getBrandsAPI } from "../../services/brand.api";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const productSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  category: z.string().min(1, "Category is required"),
+  brand: z.string().optional(),
+  description: z.string().optional(),
+  price: z.object({
+    base: z.number().min(0, "Base price is required"),
+    discount: z.number().optional(),
+    tiered: z.array(z.object({
+      minQty: z.number().optional(),
+      price: z.number().optional(),
+    })).optional(),
+  }),
+  inventory: z.object({
+    quantity: z.number().min(0, "Quantity is required"),
+    sku: z.string().optional(),
+    lowStockThreshold: z.number().optional(),
+    warehouseLocation: z.string().optional(),
+  }),
+  tags: z.array(z.string()).optional(),
+  attributes: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+  variants: z.array(z.any()).optional(),
+  isActive: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  availableFrom: z.string().optional(),
+});
+type ProductFormSchema = z.infer<typeof productSchema>;
 
 export default function ProductFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +65,8 @@ export default function ProductFormPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const form = useForm<Product>({
+  const form = useForm<ProductFormSchema>({
+    resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
       slug: "",
@@ -90,7 +121,7 @@ export default function ProductFormPage() {
     }
   }, [id, isEdit, reset]);
 
-  const onSubmit = async (data: Product) => {
+  const onSubmit = async (data: ProductFormSchema) => {
     const cleanedAttributes = (data.attributes ?? []).filter(
       (attr) => attr.key.trim() !== "" && attr.value.trim() !== ""
     );
@@ -123,8 +154,8 @@ export default function ProductFormPage() {
         warehouseLocation: data.inventory.warehouseLocation,
       })
     );
-    formData.append("isActive", data.isActive.toString());
-    formData.append("isFeatured", data.isFeatured.toString());
+    formData.append("isActive", (data.isActive ?? true).toString());
+    formData.append("isFeatured", (data.isFeatured ?? false).toString());
     formData.append("availableFrom", data.availableFrom ?? "");
     if (imageFile) {
       formData.append("image", imageFile);
@@ -153,7 +184,6 @@ export default function ProductFormPage() {
       <Controller
         name="name"
         control={control}
-        rules={{ required: "Name is required" }}
         render={({ field }) => (
           <TextField {...field} label="Product Name" fullWidth sx={{ mb: 2 }} />
         )}
@@ -304,7 +334,6 @@ export default function ProductFormPage() {
           <Controller
             name={`attributes.${index}.key`}
             control={control}
-            rules={{ required: "Key is required" }}
             render={({ field }) => (
               <TextField {...field} label="Key" error={!!errors.attributes?.[index]?.key} helperText={errors.attributes?.[index]?.key?.message} />
             )}
@@ -312,7 +341,6 @@ export default function ProductFormPage() {
           <Controller
             name={`attributes.${index}.value`}
             control={control}
-            rules={{ required: "Value is required" }}
             render={({ field }) => (
               <TextField {...field} label="Value" error={!!errors.attributes?.[index]?.value} helperText={errors.attributes?.[index]?.value?.message} />
             )}

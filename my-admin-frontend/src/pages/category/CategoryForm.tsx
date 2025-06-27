@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Category } from '../../types/product';
 import { createCategoryAPI, getCategoryByIdAPI, updateCategoryAPI, getCategoriesAPI } from '../../services/category.api';
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const categorySchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  parent: z.string().optional(),
+});
 
 export default function CategoryFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +28,7 @@ export default function CategoryFormPage() {
       description: '',
       parent: '',
     },
+    resolver: zodResolver(categorySchema),
   });
   const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
 
@@ -58,7 +68,6 @@ export default function CategoryFormPage() {
       <Controller
         name="name"
         control={control}
-        rules={{ required: 'Name is required' }}
         render={({ field }) => (
           <TextField {...field} label="Category Name" fullWidth sx={{ mb: 2 }} />
         )}

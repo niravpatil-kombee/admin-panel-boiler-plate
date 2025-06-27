@@ -4,13 +4,24 @@ import { Box, TextField, Button, Typography, Container, Paper } from '@mui/mater
 import useAuth from '../hooks/useAuth';
 import type { LoginCredentials } from '../types/auth';
 import { useSnackbar } from 'notistack';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const loginSchema = z.object({
+    email: z.string().min(1, 'Email is required').email('Invalid email address'),
+    password: z.string().min(1, 'Password is required'),
+});
+
+type LoginSchema = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const { login } = useAuth();
     const { enqueueSnackbar } = useSnackbar();
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginCredentials>();
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginSchema>({
+        resolver: zodResolver(loginSchema),
+    });
 
-    const onSubmit: SubmitHandler<LoginCredentials> = async (data) => {
+    const onSubmit: SubmitHandler<LoginSchema> = async (data) => {
         try {
             await login(data);
             enqueueSnackbar('Login successful!', { variant: 'success' });
@@ -35,7 +46,7 @@ export default function LoginPage() {
                         label="Email Address"
                         autoComplete="email"
                         autoFocus
-                        {...register('email', { required: 'Email is required' })}
+                        {...register('email')}
                         error={!!errors.email}
                         helperText={errors.email?.message}
                     />
@@ -47,7 +58,7 @@ export default function LoginPage() {
                         type="password"
                         id="password"
                         autoComplete="current-password"
-                        {...register('password', { required: 'Password is required' })}
+                        {...register('password')}
                         error={!!errors.password}
                         helperText={errors.password?.message}
                     />

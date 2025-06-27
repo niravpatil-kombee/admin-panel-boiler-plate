@@ -4,12 +4,21 @@ import { useForm, Controller } from 'react-hook-form';
 import { Box, Button, Container, Paper, TextField, Typography } from '@mui/material';
 import { getBrandByIdAPI, createBrandAPI, updateBrandAPI } from '../../services/brand.api';
 import type { Brand } from '../../types/product';
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const brandSchema = z.object({
+  name: z.string().min(1, "Brand name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+});
 
 export default function BrandFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<Brand>({
+    resolver: zodResolver(brandSchema),
     defaultValues: { name: '', slug: '', description: '' },
   });
 
@@ -35,7 +44,6 @@ export default function BrandFormPage() {
           <Controller
             name="name"
             control={control}
-            rules={{ required: 'Brand name is required' }}
             render={({ field }) => (
               <TextField {...field} label="Brand Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }} />
             )}
@@ -43,7 +51,6 @@ export default function BrandFormPage() {
           <Controller
             name="slug"
             control={control}
-            rules={{ required: 'Slug is required' }}
             render={({ field }) => (
               <TextField {...field} label="Slug" fullWidth error={!!errors.slug} helperText={errors.slug?.message} sx={{ mb: 3 }} />
             )}

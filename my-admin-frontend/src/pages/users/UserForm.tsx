@@ -17,6 +17,19 @@ import type { UserFormData } from '../../services/auth.api';
 import { createUserAPI, getUserByIdAPI, updateUserAPI } from '../../services/auth.api';
 import { getRolesAPI } from '../../services/role.api';
 import type { Role } from '../../types/role';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const getUserSchema = (isEdit: boolean) => z.object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().min(1, 'Email is required').email('Invalid email address'),
+    password: isEdit
+        ? z.string().min(0).optional()
+        : z.string().min(6, 'Password must be at least 6 characters'),
+    role: z.string().min(1, 'Role is required'),
+});
+
+type UserFormSchema = z.infer<ReturnType<typeof getUserSchema>>;
 
 export default function UserFormPage() {
     const { id } = useParams<{ id: string }>();
@@ -27,7 +40,8 @@ export default function UserFormPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<UserFormData>({
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<UserFormSchema>({
+        resolver: zodResolver(getUserSchema(isEdit)),
         defaultValues: { name: '', email: '', password: '', role: '' },
     });
 
@@ -44,6 +58,7 @@ export default function UserFormPage() {
                         name: userData.name,
                         email: userData.email,
                         role: userData.role._id,
+                        password: '',
                     });
                 }
             } catch (error) {
@@ -57,7 +72,7 @@ export default function UserFormPage() {
         fetchData();
     }, [id, isEdit, navigate, enqueueSnackbar, reset]);
 
-    const onSubmit: SubmitHandler<UserFormData> = async (data) => {
+    const onSubmit: SubmitHandler<UserFormSchema> = async (data) => {
         try {
             if (isEdit && id) {
                 const updateData: Partial<UserFormData> = { ...data };
@@ -98,7 +113,6 @@ export default function UserFormPage() {
                             <Controller
                                 name="name"
                                 control={control}
-                                rules={{ required: 'Name is required' }}
                                 render={({ field }) => (
                                     <TextField {...field} label="Full Name" fullWidth error={!!errors.name} helperText={errors.name?.message} />
                                 )}
@@ -109,10 +123,6 @@ export default function UserFormPage() {
                             <Controller
                                 name="email"
                                 control={control}
-                                rules={{
-                                    required: 'Email is required',
-                                    pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' },
-                                }}
                                 render={({ field }) => (
                                     <TextField {...field} label="Email Address" fullWidth error={!!errors.email} helperText={errors.email?.message} />
                                 )}
@@ -123,7 +133,6 @@ export default function UserFormPage() {
                             <Controller
                                 name="role"
                                 control={control}
-                                rules={{ required: 'Role is required' }}
                                 render={({ field }) => (
                                     <TextField {...field} select label="Role" fullWidth error={!!errors.role} helperText={errors.role?.message}>
                                         {roles.map((option) => (
@@ -140,7 +149,6 @@ export default function UserFormPage() {
                             <Controller
                                 name="password"
                                 control={control}
-                                rules={{ required: !isEdit, minLength: { value: 6, message: 'Password must be at least 6 characters' } }}
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
