@@ -3,6 +3,9 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import CategoryIcon from '@mui/icons-material/Category';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import CollectionsIcon from '@mui/icons-material/Collections';
 
 export interface NavItem {
     title: string;
@@ -35,5 +38,23 @@ export const navConfig: NavItem[] = [
         path: '/products',
         icon: InventoryIcon,
         permission: 'product:read',
+    },
+    {
+        title: 'Category Management',
+        path: '/categories',
+        icon: CategoryIcon,
+        permission: 'category:read',
+    },
+    {
+        title: 'Brand Management',
+        path: '/brands',
+        icon: LocalOfferIcon,
+        permission: 'brand:read',
+    },
+    {
+        title: 'Collection Management',
+        path: '/collections',
+        icon: CollectionsIcon,
+        permission: 'collection:read',
     },
 ];

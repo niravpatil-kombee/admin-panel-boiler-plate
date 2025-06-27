@@ -1,10 +1,16 @@
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import { Request } from 'express';
+import fs from 'fs';
+
+const uploadDir = 'uploads/products/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-    cb(null, 'uploads/products/'); // Ensure this folder exists
+    cb(null, uploadDir);
   },
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const uniqueName = `${Date.now()}-${file.originalname}`;

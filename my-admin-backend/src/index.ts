@@ -9,7 +9,11 @@ import roleRoutes from './routes/role.routes';
 import permissionRoutes from './routes/permission.routes';
 import userRoutes from './routes/user.routes';
 import productRoutes from './routes/product.routes';
+import brandRoutes from './routes/brand.routes';
+import categoryRoutes from './routes/category.routes';
+import collectionRoute from './routes/collection.routes';
 import session from 'express-session';
+import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -40,11 +44,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
+app.use('/api/product', productRoutes);
+app.use('/api/brands', brandRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/collections', collectionRoute);
 
 // Health check route
 app.get('/api/health', (req: Request, res: Response) => {

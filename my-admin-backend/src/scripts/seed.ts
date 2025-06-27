@@ -25,17 +25,57 @@ const seedDatabase = async () => {
             { name: 'user:read', description: 'Read user data' },
             { name: 'user:update', description: 'Update a user' },
             { name: 'user:delete', description: 'Delete a user' },
+          
             // Role Management
             { name: 'role:create', description: 'Create a new role' },
             { name: 'role:read', description: 'Read role data' },
             { name: 'role:update', description: 'Update a role' },
             { name: 'role:delete', description: 'Delete a role' },
-            // Product (Sample CRUD)
+          
+            // Permission Management (optional)
+            { name: 'permission:read', description: 'Read permissions' },
+          
+            // Product Management
             { name: 'product:create', description: 'Create a new product' },
             { name: 'product:read', description: 'Read product data' },
             { name: 'product:update', description: 'Update a product' },
             { name: 'product:delete', description: 'Delete a product' },
-        ];
+          
+            // Product Variant Management
+            { name: 'variant:manage', description: 'Manage product variants' },
+          
+            // Product Image Management
+            { name: 'image:upload', description: 'Upload product images' },
+            { name: 'image:delete', description: 'Delete product images' },
+          
+            // Inventory Management
+            { name: 'inventory:update', description: 'Update product inventory' },
+          
+            // Pricing Management
+            { name: 'pricing:update', description: 'Update product pricing' },
+          
+            // Attribute Management
+            { name: 'attribute:manage', description: 'Manage product attributes' },
+          
+            // Category Management
+            { name: 'category:create', description: 'Create a new category' },
+            { name: 'category:read', description: 'Read category data' },
+            { name: 'category:update', description: 'Update a category' },
+            { name: 'category:delete', description: 'Delete a category' },
+          
+            // Brand Management
+            { name: 'brand:create', description: 'Create a new brand' },
+            { name: 'brand:read', description: 'Read brand data' },
+            { name: 'brand:update', description: 'Update a brand' },
+            { name: 'brand:delete', description: 'Delete a brand' },
+          
+            // Collection Management
+            { name: 'collection:create', description: 'Create a new collection' },
+            { name: 'collection:read', description: 'Read collection data' },
+            { name: 'collection:update', description: 'Update a collection' },
+            { name: 'collection:delete', description: 'Delete a collection' },
+          ];
+          
 
         const createdPermissions = await Permission.insertMany(permissionsList);
         const permissionIds = createdPermissions.map(p => p._id);

@@ -1,0 +1,26 @@
+import axios from '../utils/axios';
+import type { Brand } from '../types/product';
+
+export const getBrandsAPI = async (): Promise<Brand[]> => {
+  const { data } = await axios.get('/brands');
+  return data;
+};
+
+export const getBrandByIdAPI = async (id: string): Promise<Brand> => {
+  const { data } = await axios.get(`/brands/${id}`);
+  return data;
+};
+
+export const createBrandAPI = async (brand: Partial<Brand>): Promise<Brand> => {
+  const { data } = await axios.post('/brands', brand);
+  return data;
+};
+
+export const updateBrandAPI = async (id: string, brand: Partial<Brand>): Promise<Brand> => {
+  const { data } = await axios.put(`/brands/${id}`, brand);
+  return data;
+};
+
+export const deleteBrandAPI = async (id: string): Promise<void> => {
+  await axios.delete(`/brands/${id}`);
+}; 

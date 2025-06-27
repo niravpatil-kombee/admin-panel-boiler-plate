@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Box, Paper} from '@mui/material';
-import { DataGrid, GridActionsCellItem, type GridColDef } from '@mui/x-data-grid';
+import {
+  Box,
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  CardActions,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
@@ -44,44 +52,67 @@ export default function ProductListPage() {
     }
   };
 
-  const columns: GridColDef<Product>[] = [
-    { field: 'name', headerName: 'Name', flex: 1 },
-    { field: 'price', headerName: 'Price', flex: 1 },
-    { field: 'stock', headerName: 'Stock', flex: 1 },
-    { field: 'category', headerName: 'Category', flex: 1 },
-    {
-      field: 'image',
-      headerName: 'Image',
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? (
-          <img src={`/uploads/products/${params.value}`} alt="product" style={{ width: 50, height: 50, objectFit: 'cover' }} />
-        ) : null,
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Actions',
-      width: 100,
-      getActions: ({ id }) => [
-        <GridActionsCellItem icon={<EditIcon />} label="Edit" onClick={() => handleEdit(id as string)} />,
-        <GridActionsCellItem icon={<DeleteIcon />} label="Delete" onClick={() => handleDelete(id as string)} />,
-      ],
-    },
-  ];
-
   return (
     <Box>
       <PageHeader title="Product Management" buttonText="Add Product" buttonLink="/products/new" />
-      <Paper sx={{ height: 600, width: '100%', mt: 2 }}>
-        <DataGrid
-          rows={products}
-          columns={columns}
-          getRowId={(row) => row._id!}
-          loading={loading}
-          pageSizeOptions={[5, 10, 25]}
-        />
-      </Paper>
+      
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={5}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box
+          mt={3}
+          display="flex"
+          flexWrap="wrap"
+          gap={3}
+          justifyContent="flex-start"
+        >
+          {products.map((product) => (
+            <Box
+              key={product._id}
+              width={{ xs: '100%', sm: '47%', md: '31%', lg: '23%' }}
+              minWidth={250}
+              maxWidth={300}
+              flexGrow={1}
+            >
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {product.images?.[0]?.url && (
+                  <CardMedia
+                    component="img"
+                    height="180"
+                    image={product.images?.[0]?.url
+                      ? product.images[0].url.startsWith('http')
+                        ? product.images[0].url
+                        : `http://localhost:5001${product.images[0].url}`
+                      : '/placeholder.png'}
+                    alt={product.name}
+                  />
+                )}
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6">{product.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    ₹{product.price?.base}{" "}
+                    {product.price?.discount ? `(₹${product.price.discount})` : ""}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Stock: {product.inventory?.quantity ?? 0}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <IconButton onClick={() => handleEdit(product._id!)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(product._id!)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Box>
+          ))}
+        </Box>
+      )}
+
       <ConfirmDialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}

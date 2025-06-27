@@ -5,7 +5,7 @@ import useAuth from '../hooks/useAuth';
 import type { User } from '../types/auth';
 import React from 'react';
 
-const drawerWidth = 240;
+const drawerWidth = 300;
 
 const hasPermission = (user: User | null, requiredPermission?: string) => {
     if (!requiredPermission) return true;
