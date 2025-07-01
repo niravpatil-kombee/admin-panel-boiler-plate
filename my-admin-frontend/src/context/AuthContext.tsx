@@ -1,51 +1,53 @@
 import { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, LoginCredentials, AuthContextType } from '../types/auth';
-import { loginAPI, getMeAPI } from '../services/auth.api';
+import { loginAPI, getMeAPI, refreshSessionAPI, logoutAPI } from '../services/auth.api';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const initializeAuth = async () => {
-                try {
-                    const { user: fetchedUser } = await getMeAPI();
-                    setUser(fetchedUser);
-                } catch (error) {
-                setUser(null);
-            }
-            setIsLoading(false);
-        };
-        initializeAuth();
-    }, []);
+  const isAuthenticated = !!user;
 
-    const login = async (credentials: LoginCredentials) => {
-        await loginAPI(credentials);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
         const { user: fetchedUser } = await getMeAPI();
         setUser(fetchedUser);
-        navigate('/dashboard');
-    };
-
-    const logout = async () => {
-        try {
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-        } catch {}
+      } catch {
         setUser(null);
-        navigate('/auth/login');
+      } finally {
+        setIsLoading(false);
+      }
     };
+    initializeAuth();
+  }, []);
 
-    const isAuthenticated = !!user;
 
-    return (
-        <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const login = async (credentials: LoginCredentials) => {
+    await loginAPI(credentials);
+    const { user: fetchedUser } = await getMeAPI();
+    setUser(fetchedUser);
+    navigate('/dashboard');
+  };
+
+  const logout = async () => {
+    try {
+      await logoutAPI();
+    } catch {}
+    setUser(null);
+    navigate('/auth/login');
+  };
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext;

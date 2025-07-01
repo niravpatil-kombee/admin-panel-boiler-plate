@@ -125,7 +125,7 @@ export const logout = (req: Request, res: Response): void => {
     });
 };
 
-export const me = async (req: Request, res: Response) => {
+export const currentUser = async (req: Request, res: Response) => {
     const user = req.user as IUser | undefined;
 
     if (!user) {

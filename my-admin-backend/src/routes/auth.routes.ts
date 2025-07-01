@@ -33,7 +33,7 @@ router.post('/login', (req, res, next) => {
   });
 
 router.post('/logout', isAuthenticated, asyncHandler(authController.logout));
-router.get('/me', isAuthenticated, asyncHandler(authController.me));
+router.get('/current-user', isAuthenticated, asyncHandler(authController.currentUser));
 router.post("/forgot-password", asyncHandler(authController.forgotPass));
 router.post("/reset-password/:token", asyncHandler(authController.resetPass));
 
