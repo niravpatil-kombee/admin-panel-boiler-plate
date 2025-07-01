@@ -18,7 +18,7 @@ export default function RoleFormPage() {
     const { id } = useParams<{ id: string }>();
     const isEdit = !!id;
     const navigate = useNavigate();
-    const [permissions, setPermissions] = useState([]);
+    const [permissions, setPermissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RoleFormSchema>({
@@ -32,7 +32,7 @@ export default function RoleFormPage() {
             try {
                 // Fetch all permissions
                 const perms = await getPermissionsAPI();
-                setPermissions(perms);
+                setPermissions(perms.permissions);
 
                 if (isEdit && id) {
                     const role = await getRoleByIdAPI(id);

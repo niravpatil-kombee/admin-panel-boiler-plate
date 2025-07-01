@@ -34,7 +34,7 @@ export const create = async (req: Request, res: Response) => {
 
 export const getAll = async (_req: Request, res: Response) => {
     try {
-        const users = await User.find().exec();
+        const users = await User.find().populate('role').exec();
         return res.status(200).json({
             message: "Users fetched!",
             totalUsers: users.length,

@@ -20,7 +20,7 @@ export default function CategoryListPage() {
     setLoading(true);
     try {
       const data = await getCategoriesAPI();
-      setCategories(data);
+      setCategories(data.categories);
     } finally {
       setLoading(false);
     }

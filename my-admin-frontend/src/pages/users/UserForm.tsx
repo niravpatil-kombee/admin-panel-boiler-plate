@@ -50,7 +50,7 @@ export default function UserFormPage() {
             setLoading(true);
             try {
                 const rolesData = await getRolesAPI();
-                setRoles(rolesData);
+                setRoles(rolesData.roles);
 
                 if (isEdit && id) {
                     const userData = await getUserByIdAPI(id);

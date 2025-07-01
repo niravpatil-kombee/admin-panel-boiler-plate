@@ -20,7 +20,7 @@ export default function CollectionListPage() {
     setLoading(true);
     try {
       const data = await getCollectionsAPI();
-      setCollections(data);
+      setCollections(data.collections);
     } finally {
       setLoading(false);
     }

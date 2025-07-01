@@ -1,7 +1,13 @@
 import axios from '../utils/axios';
 import type { Brand } from '../types/product';
 
-export const getBrandsAPI = async (): Promise<Brand[]> => {
+export interface GetBrandsResponse {
+  message: string;
+  totalBrands: number;
+  brands: Brand[];
+}
+
+export const getBrandsAPI = async (): Promise<GetBrandsResponse> => {
   const { data } = await axios.get('/brands');
   return data;
 };

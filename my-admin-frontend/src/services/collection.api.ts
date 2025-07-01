@@ -1,7 +1,13 @@
 import axios from '../utils/axios';
 import type { Collection } from '../types/product';
 
-export const getCollectionsAPI = async (): Promise<Collection[]> => {
+export interface GetCollectionsResponse {
+  message: string;
+  totalCollections: number;
+  collections: Collection[];
+}
+
+export const getCollectionsAPI = async (): Promise<GetCollectionsResponse> => {
   const { data } = await axios.get('/collections');
   return data;
 };

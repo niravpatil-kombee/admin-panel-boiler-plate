@@ -34,7 +34,7 @@ export default function CategoryFormPage() {
 
   useEffect(() => {
     // Fetch all categories for parent select
-    getCategoriesAPI().then((data) => setCategories(data));
+    getCategoriesAPI().then((data) => setCategories(data.categories));
     if (isEdit && id) {
       setLoading(true);
       getCategoryByIdAPI(id)

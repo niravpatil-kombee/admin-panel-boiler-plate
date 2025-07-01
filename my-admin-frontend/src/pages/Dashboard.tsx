@@ -40,11 +40,11 @@ export default function DashboardPage() {
             ]);
             
             // Filter roles to only show Viewer and Editor for assignment
-            const allowedRoles = rolesData.filter(role => 
+            const allowedRoles = rolesData.roles.filter((role: Role) => 
                 role.name === 'Viewer' || role.name === 'Editor'
             );
             
-            setUsers(usersData);
+            setUsers(usersData.users);
             setRoles(allowedRoles);
         } catch (error) {
             enqueueSnackbar('Failed to fetch data', { variant: 'error' });

@@ -20,7 +20,8 @@ export default function RoleListPage() {
         setLoading(true);
         try {
             const data = await getRolesAPI();
-            setRoles(data);
+            console.log(data.roles);
+            setRoles(data.roles);
         } finally {
             setLoading(false);
         }

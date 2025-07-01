@@ -23,7 +23,7 @@ export default function UserListPage() {
         setLoading(true);
         try {
             const fetchedUsers = await getUsersAPI();
-            setUsers(fetchedUsers);
+            setUsers(fetchedUsers.users);
         } catch (error) {
             enqueueSnackbar('Failed to fetch users', { variant: 'error' });
         } finally {

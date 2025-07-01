@@ -28,7 +28,7 @@ export default function ProductListPage() {
     setLoading(true);
     try {
       const data = await getProductsAPI();
-      setProducts(data);
+      setProducts(data.products);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,13 @@
 import axios from '../utils/axios';
 import type { Role } from '../types/role';
 
-export const getRolesAPI = async (): Promise<Role[]> => {
+export interface GetRolesResponse {
+    message: string;
+    totalRoles: number;
+    roles: Role[];
+}
+
+export const getRolesAPI = async (): Promise<GetRolesResponse> => {
     const { data } = await axios.get('/roles');
     return data;
 };

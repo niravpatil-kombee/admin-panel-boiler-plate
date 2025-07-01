@@ -33,7 +33,7 @@ export const create = async (req: Request, res: Response) => {
 
 export const getAll = async (req: Request, res: Response) => {
     try {
-      const roles = await Role.find().exec();
+      const roles = await Role.find().populate('permissions').exec();
       res.status(200).json({
         message: "Roles fetched!",
         totalRoles: roles.length,

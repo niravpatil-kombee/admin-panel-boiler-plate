@@ -20,7 +20,7 @@ export default function BrandListPage() {
     setLoading(true);
     try {
       const data = await getBrandsAPI();
-      setBrands(data);
+      setBrands(data.brands);
     } finally {
       setLoading(false);
     }

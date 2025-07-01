@@ -1,6 +1,12 @@
 import axios from '../utils/axios';
 import type { LoginCredentials, RegisterData, User } from '../types/auth';
 
+export interface GetUsersResponse {
+  message: string;
+  totalUsers: number;
+  users: User[];
+}
+
 export const loginAPI = async (credentials: LoginCredentials) => {
   const { data } = await axios.post('/auth/login', credentials);
   return data;
@@ -16,7 +22,7 @@ export const getMeAPI = async () => {
   return data;
 };
 
-export const getUsersAPI = async (): Promise<User[]> => {
+export const getUsersAPI = async (): Promise<GetUsersResponse> => {
   const { data } = await axios.get('/users');
   return data;
 };
@@ -48,10 +54,10 @@ export const updateUserAPI = async (id: string, userData: Partial<UserFormData>)
   return data;
 };
 
-export const refreshSessionAPI = async () => {
-  const { data } = await axios.post('/refresh-session');
-  return data;
-};
+// export const refreshSessionAPI = async () => {
+//   const { data } = await axios.post('/refresh-session');
+//   return data;
+// };
 
 export const logoutAPI = async () => {
   const { data } = await axios.post('/auth/logout');

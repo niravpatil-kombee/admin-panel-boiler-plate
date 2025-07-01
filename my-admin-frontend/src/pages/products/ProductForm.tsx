@@ -109,8 +109,8 @@ export default function ProductFormPage() {
   } = useFieldArray({ control, name: "price.tiered" });
 
   useEffect(() => {
-    getCategoriesAPI().then(setCategories);
-    getBrandsAPI().then(setBrands);
+    getCategoriesAPI().then((data) => setCategories(data.categories));
+    getBrandsAPI().then((data) => setBrands(data.brands));
     if (isEdit && id) {
       setLoading(true);
       getProductByIdAPI(id)
