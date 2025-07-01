@@ -1,49 +1,119 @@
 import { Request, Response } from 'express';
-import * as roleService from '../services/role.service';
+
+import Role from '../models/Role';
+import { isValidObjectId } from 'mongoose';
 
 export const create = async (req: Request, res: Response) => {
+    const roleData = {
+        name: req.body.name,
+        permissions: req.body.permissions,
+    }
     try {
-        const role = await roleService.createRole(req.body);
-        return res.status(201).json(role);
+        const existingRole = await Role.findOne({ name: req.body.name });
+        if (existingRole) {
+          return res.status(409).json({
+            message: "Role already exists with this name",
+          });
+        }
+
+        const role = new Role(roleData);
+        await role.save();
+
+        return res.status(201).json({
+            message: "Role created successfully",
+            role,
+        });
     } catch (error: any) {
-        return res.status(400).json({ message: error.message });
+        res.status(500).json({
+            message: "Error while creating role",
+            error: error.message,
+          });
     }
 };
 
-export const getAll = async (_req: Request, res: Response) => {
+export const getAll = async (req: Request, res: Response) => {
     try {
-        const roles = await roleService.getRoles();
-        return res.status(200).json(roles);
-    } catch (error: any) {
-        return res.status(500).json({ message: 'Error fetching roles.' });
+      const roles = await Role.find().exec();
+      res.status(200).json({
+        message: "Roles fetched!",
+        totalRoles: roles.length,
+        roles,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error in fetch roles",
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-};
+  };
 
 export const getOne = async (req: Request, res: Response) => {
+    const roleId = req.params.id;
     try {
-        const role = await roleService.getRoleById(req.params.id);
-        if (!role) return res.status(404).json({ message: 'Role not found' });
-        return res.status(200).json(role);
+        if (!isValidObjectId(roleId)) {
+            return res.status(400).json({
+              message: "roleId is not valid",
+              Id: roleId,
+            });
+          }
+        const role = await Role.findById(req.params.id).exec();
+        if (!role) {
+            return res.status(404).json({
+              message: "Role not found",
+            });
+          }
+        res.status(200).json({
+            message: "Role fetched!",
+            role,
+        });
     } catch (error: any) {
         return res.status(400).json({ message: error.message });
     }
 };
 
 export const update = async (req: Request, res: Response) => {
+    const roleId = req.params.id;
     try {
-        const role = await roleService.updateRole(req.params.id, req.body);
-        if (!role) return res.status(404).json({ message: 'Role not found' });
-        return res.status(200).json(role);
+        if (!isValidObjectId(roleId)) {
+            return res.status(400).json({
+              message: "roleId is not valid",
+              Id: roleId,
+            });
+          }
+        const role = await Role.findByIdAndUpdate(roleId, req.body, { new: true }).exec();
+        if (!role) {
+            return res.status(404).json({
+              message: "Role not found",
+            });
+          }
+        res.status(200).json({
+            message: "Role updated successfully",
+            role,
+        });
     } catch (error: any) {
         return res.status(400).json({ message: error.message });
     }
 };
 
 export const remove = async (req: Request, res: Response) => {
+    const roleId = req.params.id;
     try {
-        const role = await roleService.deleteRole(req.params.id);
-        if (!role) return res.status(404).json({ message: 'Role not found' });
-        return res.status(204).send();
+        if (!isValidObjectId(roleId)) {
+            return res.status(400).json({
+              message: "roleId is not valid",
+              Id: roleId,
+            });
+          }
+        const role = await Role.findByIdAndDelete(roleId).exec();
+        if (!role) {
+            return res.status(404).json({
+                message: "Role not found",
+              });
+          }
+        res.status(200).json({
+            message: "Role deleted successfully",
+            role,
+        });
     } catch (error: any) {
         return res.status(500).json({ message: 'Error deleting role.' });
     }

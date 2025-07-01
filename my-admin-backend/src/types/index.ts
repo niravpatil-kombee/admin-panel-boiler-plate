@@ -13,10 +13,12 @@ export interface IRole extends Document {
 export interface IUser extends Document {
   name: string;
   email: string;
-  password?: string;
+  password: string;
   role: Types.ObjectId; // reference to Role
   isEmailVerified: boolean;
   comparePassword(password: string): Promise<boolean>;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 export interface IProduct {

@@ -1,53 +1,129 @@
 import { Request, Response } from 'express';
-import * as userService from '../services/user.service';
+import User from '../models/User';
+import { isValidObjectId } from 'mongoose';
 
 export const create = async (req: Request, res: Response) => {
+    const userData = {
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+    }
     try {
-        if (!req.body.password) {
-            return res.status(400).json({ message: "Password is required for new users." });
+        const existingUser = await User.findOne({ email: req.body.email });
+        if (existingUser) {
+            return res.status(409).json({
+                message: "User already exists with this email",
+            });
         }
-        const user = await userService.createUser(req.body);
-        return res.status(201).json(user);
+
+        const user = new User(userData);
+        await user.save();
+
+        return res.status(201).json({
+            message: "User created successfully",
+            user,
+        });
+
     } catch (error: any) {
-        return res.status(400).json({ message: error.message });
+        return res.status(500).json({
+            message: "Error while creating user",
+            error: error.message,
+          });
     }
 };
 
 export const getAll = async (_req: Request, res: Response) => {
     try {
-        const users = await userService.getUsers();
-        return res.status(200).json(users);
+        const users = await User.find().exec();
+        return res.status(200).json({
+            message: "Users fetched!",
+            totalUsers: users.length,
+            users,
+        });
     } catch (error: any) {
-        return res.status(500).json({ message: 'Error fetching users.' });
+        return res.status(500).json({
+            message: "Error while fetching users",
+            error: error.message,
+          });
     }
 };
 
 export const getOne = async (req: Request, res: Response) => {
+    const userId = req.params.id;
     try {
-        const user = await userService.getUserById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        return res.status(200).json(user);
+        if (!isValidObjectId(userId)) {
+            return res.status(400).json({
+              message: "userId is not valid",
+              Id: userId,
+            });
+          }
+
+        const user = await User.findById(req.params.id).exec();
+        if (!user) {
+            return res.status(404).json({
+              message: "User not found",
+            });
+          }
+        res.status(200).json({
+            message: "User fetched!",
+            user,
+        });
     } catch (error: any) {
-        return res.status(400).json({ message: error.message });
+        return res.status(500).json({
+            message: "Error while fetching user",
+            error: error.message,
+          });
     }
 };
 
 export const update = async (req: Request, res: Response) => {
+    const userId = req.params.id;
     try {
-        const user = await userService.updateUser(req.params.id, req.body);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        return res.status(200).json(user);
+        if (!isValidObjectId(userId)) {
+            return res.status(400).json({
+              message: "userId is not valid",
+              Id: userId,
+            });
+          }
+
+        const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).exec();
+        if (!user) {
+            return res.status(404).json({
+              message: "User not found",
+            });
+          }
+        res.status(200).json({
+            message: "User updated successfully",
+            user,
+        });
     } catch (error: any) {
-        return res.status(400).json({ message: error.message });
+        return res.status(500).json({
+            message: "Error while updating user",
+            error: error.message,
+          });
     }
 };
 
 export const remove = async (req: Request, res: Response) => {
+    const userId = req.params.id;
     try {
-        const user = await userService.deleteUser(req.params.id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        return res.status(204).send();
+        if (!isValidObjectId(userId)) {
+            return res.status(400).json({
+              message: "userId is not valid",
+              Id: userId,
+            });
+          }
+        const user = await User.findByIdAndDelete(userId).exec();
+        if (!user) {
+            return res.status(404).json({
+              message: "User not found",
+            });
+          }
+        res.status(204).send();
     } catch (error: any) {
-        return res.status(500).json({ message: 'Error deleting user.' });
+        return res.status(500).json({
+            message: "Error while deleting user",
+            error: error.message,
+          });
     }
 };
