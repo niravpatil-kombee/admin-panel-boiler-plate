@@ -33,28 +33,17 @@ app.use(express.urlencoded({ extended: true }));
 // Session must come before passport.session()
 app.use(
   session({
-    secret: "your-secret-key",
+    secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60000, // 1 minute
-    }, // set to true if using HTTPS
+      maxAge: 60 * 60 * 1000, // 1 minute 
+    },
   })
 );
 
-app.use(
-    session({
-      secret: process.env.SESSION_SECRET as string,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        // secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      },
-    })
-  );
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -81,7 +70,7 @@ app.post("/api/refresh-session", (req, res) => {
         }
 
         //Reset the maxAge of the cookie
-        req.session.cookie.maxAge = 60000; // 1 minute  
+        req.session.cookie.maxAge = 60 * 60 * 1000; // 1 hr
 
         return res.json({
           message: "Session refreshed successfully",
@@ -90,6 +79,7 @@ app.post("/api/refresh-session", (req, res) => {
       });
     });
   } else {
+    console.log('Session expired or user not authenticated when calling /api/refresh-session');
     res.status(401).json({
       message: "User not authenticated",
     });

@@ -31,10 +31,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (credentials: LoginCredentials) => {
     await loginAPI(credentials);
     localStorage.setItem('isLoggedIn', 'true');
+  
+    // ✅ Wait 100ms to let browser set the session cookie
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  
     const { user: fetchedUser } = await getMeAPI();
     setUser(fetchedUser);
     navigate('/dashboard');
   };
+  
 
   const logout = async () => {
     try {
