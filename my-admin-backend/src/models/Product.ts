@@ -1,85 +1,81 @@
 import { Schema, model,  Document } from "mongoose";
 import {
   IProduct,
-  IProductImage,
-  IProductPrice,
-  IProductInventory,
+  IInventory,
+  IVariant,
   IProductAttribute,
-  IProductVariant,
+  IPrice,
 } from "../types";
 
-const ImageSchema = new Schema<IProductImage>(
-  {
-    url: { type: String, required: true },
-    alt: { type: String },
-    isFeatured: { type: Boolean, default: false },
-    position: { type: Number, default: 0 },
-  },
-  { _id: false }
-);
-
-const PriceSchema = new Schema<IProductPrice>(
-  {
-    base: { type: Number, required: true },
-    discount: { type: Number },
-    tiered: [
-      {
-        minQty: { type: Number },
-        price: { type: Number },
-      },
-    ],
-  },
-  { _id: false }
-);
-
-const InventorySchema = new Schema<IProductInventory>(
-  {
-    quantity: { type: Number, required: true },
-    sku: { type: String },
-    lowStockThreshold: { type: Number, default: 5 },
-    warehouseLocation: { type: String },
-  },
-  { _id: false }
-);
-
-const AttributeSchema = new Schema<IProductAttribute>(
+export const ProductAttributeSchema = new Schema<IProductAttribute>(
   {
     key: { type: String, required: true },
-    value: { type: String, required: true },
+    value: { type: Schema.Types.Mixed, required: true },
   },
   { _id: false }
 );
 
-const VariantSchema = new Schema<IProductVariant>(
+export const PriceSchema = new Schema<IPrice>(
   {
-    name: { type: String, required: true },
-    options: [{ type: String, required: true }],
+    currency: { type: String, default: 'USD', required: true },
+    base: { type: Number, required: true },
+    discount: { type: Number, default: 0 },
+    discountType: {
+      type: String,
+      enum: ['flat', 'percentage'],
+      default: 'flat',
+    },
+    finalPrice: { type: Number, required: true },
   },
   { _id: false }
 );
 
-const ProductSchema = new Schema<IProduct & Document>(
+export const InventorySchema = new Schema<IInventory>(
   {
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    description: { type: String },
+    quantity: { type: Number, required: true, default: 0 },
+    lowStockThreshold: { type: Number, default: 5 },
+    allowBackorders: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
 
-    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
-    brand: { type: Schema.Types.ObjectId, ref: "Brand" },
-
-    tags: [{ type: String }],
-    attributes: [AttributeSchema],
-    variants: [VariantSchema],
-    images: { type: [ImageSchema], default: [] },
+export const VariantSchema = new Schema<IVariant>(
+  {
+    sku: { type: String, required: true, unique: true },
+    size: { type: String },
+    color: { type: String },
+    images: [{ type: String }],
     price: { type: PriceSchema, required: true },
     inventory: { type: InventorySchema, required: true },
+    stockAvailable: { type: Boolean, default: true },
+    attributes: [ProductAttributeSchema],
+  },
+  { _id: false }
+);
 
-    isFeatured: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true },
+const ProductSchema = new Schema<IProduct>(
+  {
+    title: { type: String, required: true, trim: true },
+    description: { type: String },
+    slug: { type: String, required: true, unique: true, index: true },
+    mainImage: { type: String, required: true },
+    category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    brand: { type: Schema.Types.ObjectId, ref: 'Brand', required: true },
+    variants: { type: [VariantSchema], default: [] },
+    attributes: { type: [ProductAttributeSchema], default: [] },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
+    deletedAt: { type: Date, default: null },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   {
     timestamps: true,
   }
 );
+
 
 export default model<IProduct & Document>("Product", ProductSchema);

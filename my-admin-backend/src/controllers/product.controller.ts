@@ -5,115 +5,126 @@ import slugify from 'slugify';
 import { isValidObjectId } from 'mongoose';
 
 const parseJsonString = (value: any) => {
-    try {
-        return JSON.parse(value);
-    } catch {
-        return value;
-    }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
 };
 
+const computeStockAvailable = (quantity: number): boolean => quantity > 0;
+
 export const createProduct = async (req: Request, res: Response) => {
-    try {
-        const productData = { ...req.body };
+  try {
+    const productData = { ...req.body };
 
-        console.log(productData);
-
-        if (!productData.name) {
-            return res.status(400).json({ message: 'Product name is required' });
-        }
-
-        if (!productData.slug) {
-            productData.slug = slugify(productData.name, { lower: true, strict: true });
-        }
-
-        const fieldsToParse = ['price', 'inventory', 'attributes', 'tags', 'variants'];
-        fieldsToParse.forEach(field => {
-            if (productData[field] && typeof productData[field] === 'string') {
-                productData[field] = parseJsonString(productData[field]);
-            }
-        });
-
-        // Handle price if it is sent as a single number
-        if (productData.price && typeof productData.price === 'number') {
-            productData.price = { base: productData.price };
-        }
-
-        productData.images = [];
-        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-            productData.images = req.files.map((file: any) => ({
-                url: `/uploads/products/${file.filename}`,
-            }));
-        } else if (req.file) {
-            productData.images.push({ url: `/uploads/products/${req.file.filename}` });
-        }
-        
-        const newProduct = await productService.createProduct(productData);
-
-        res.status(201).json({
-            message: "Product added successfully",
-            product: newProduct,
-        });
-    } catch (err: any) {
-        console.error('Error creating product:', err);
-        if (err.name === 'ValidationError') {
-            return res.status(400).json({ message: 'Validation Error', errors: err.errors });
-        }
-        res.status(500).json({
-            message: 'Error while creating product',
-            error: err.message,
-        });
+    if (!productData.title) {
+      return res.status(400).json({ message: 'Product title is required' });
     }
+
+    if (!productData.slug) {
+      productData.slug = slugify(productData.title, { lower: true, strict: true });
+    }
+
+    // Parse fields from string
+    const fieldsToParse = ['price', 'inventory', 'attributes', 'tags', 'variants'];
+    fieldsToParse.forEach((field) => {
+      if (typeof productData[field] === 'string') {
+        productData[field] = parseJsonString(productData[field]);
+      }
+    });
+
+    // Parse nested variant fields and compute stockAvailable
+    if (Array.isArray(productData.variants)) {
+      productData.variants = productData.variants.map((variant: any) => {
+        if (typeof variant.price === 'string') variant.price = parseJsonString(variant.price);
+        if (typeof variant.inventory === 'string') variant.inventory = parseJsonString(variant.inventory);
+        if (typeof variant.attributes === 'string') variant.attributes = parseJsonString(variant.attributes);
+
+        variant.stockAvailable = computeStockAvailable(variant.inventory?.quantity || 0);
+        return variant;
+      });
+    }
+
+    // Debug logs for file upload
+    console.log('req.file:', req.file);
+    console.log('req.body:', req.body);
+    if (req.file) {
+      productData.mainImage = `/uploads/products/${req.file.filename}`;
+    } else {
+      return res.status(400).json({ message: 'Main image is required.' });
+    }
+
+    const product = new Product(productData);
+    await product.save();
+
+    res.status(201).json({ message: 'Product added successfully', product });
+  } catch (err: any) {
+    console.error('Error creating product:', err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Validation Error', errors: err.errors });
+    }
+    res.status(500).json({ message: 'Error while creating product', error: err.message });
+  }
 };
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
     const products = await Product.find().exec();
-    res.status(200).json({
-      message: "Products fetched!",
-      totalProducts: products.length,
-      products,
-    });
+    res.status(200).json({ message: 'Products fetched!', totalProducts: products.length, products });
   } catch (error) {
-    res.status(500).json({
-      message: "Error in fetch products",
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json({ message: 'Error in fetch products', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
 export const getProductById = async (req: Request, res: Response) => {
   const productId: string = req.params.id;
   try {
-    const product = await Product.findById(productId).exec();
-    if (!product) {
-      return res.status(404).json({
-        message: "Product not found",
-      });
+    if (!isValidObjectId(productId)) {
+      return res.status(400).json({ message: 'productId is not valid', Id: productId });
     }
-    res.status(200).json({
-      message: "Product fetched!",
-      product,
-    });
+    const product = await Product.findById(productId).exec();
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ message: 'Product fetched!', product });
   } catch (error) {
-    res.status(500).json({
-      message: "Error in fetch product",
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(500).json({ message: 'Error in fetch product', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
+  const productId = req.params.id;
   try {
-    // Ensure that if a new file is uploaded, it gets added to the images array.
-    // This logic might need to be more sophisticated, e.g., replacing existing images.
-    const updateData = { ...req.body };
-    if (req.file) {
-      updateData.images = [{ url: `/uploads/products/${req.file.filename}` }];
+    if (!isValidObjectId(productId)) {
+      return res.status(400).json({ message: 'productId is not valid', Id: productId });
     }
 
-    const product = await productService.updateProduct(req.params.id, updateData);
+    const updateData = { ...req.body };
+    const fieldsToParse = ['tags', 'attributes', 'variants'];
+    fieldsToParse.forEach(field => {
+      if (updateData[field] && typeof updateData[field] === 'string') {
+        updateData[field] = parseJsonString(updateData[field]);
+      }
+    });
+
+    if (Array.isArray(updateData.variants)) {
+      updateData.variants = updateData.variants.map((variant: any) => {
+        if (typeof variant.price === 'string') variant.price = parseJsonString(variant.price);
+        if (typeof variant.inventory === 'string') variant.inventory = parseJsonString(variant.inventory);
+        if (typeof variant.attributes === 'string') variant.attributes = parseJsonString(variant.attributes);
+
+        variant.stockAvailable = computeStockAvailable(variant.inventory?.quantity || 0);
+        return variant;
+      });
+    }
+
+    if (req.file) {
+      updateData.mainImage = `/uploads/products/${req.file.filename}`;
+    }
+
+    const product = await Product.findByIdAndUpdate(productId, updateData, { new: true }).exec();
     if (!product) return res.status(404).json({ message: 'Product not found' });
-    return res.json(product);
+
+    return res.json({ message: 'Product updated successfully', product });
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'An error occurred' });
   }
@@ -123,42 +134,22 @@ export const deleteProduct = async (req: Request, res: Response) => {
   const productId: string = req.params.id;
 
   if (!isValidObjectId(productId)) {
-    return res.status(400).json({
-      message: "userId is not valid",
-      Id: productId,
-    });
+    return res.status(400).json({ message: 'productId is not valid', Id: productId });
   }
 
   try {
     const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ message: 'Product not found', Id: productId });
 
-    if (!product) {
-      return res.status(400).json({
-        message: "product not found with this id",
-        Id: productId,
-      });
-    }
-
-    // Remove image from ImageUploads folder once its particular product deleted
-    if (product.images) {
-      const oldImagePath = product.images.url.replace('upload/', '');
-      const fullPath = `ImageUploads/${oldImagePath}`;
-
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
+    // Optional: Remove image file from disk
+    if (product.mainImage) {
+      const filePath = `.${product.mainImage}`;
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
     await Product.findByIdAndDelete(productId);
-
-    res.status(200).json({
-      message: "Product deleted successfully",
-      product,
-    });
+    res.status(200).json({ message: 'Product deleted successfully', product });
   } catch (error) {
-    res.status(500).json({
-      message: "Error in delete Product",
-      error,
-    });
+    res.status(500).json({ message: 'Error in delete Product', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };

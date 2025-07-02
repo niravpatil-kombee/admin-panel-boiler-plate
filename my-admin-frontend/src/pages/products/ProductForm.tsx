@@ -5,17 +5,14 @@ import {
   Checkbox,
   CircularProgress,
   FormControlLabel,
-  IconButton,
   MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Product, Category, Brand } from "../../types/product";
+import type { Category, Brand } from "../../types/product";
 import {
   createProductAPI,
   getProductByIdAPI,
@@ -27,32 +24,39 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required"),
   category: z.string().min(1, "Category is required"),
-  brand: z.string().optional(),
+  brand: z.string().min(1, "Brand is required"),
   description: z.string().optional(),
-  price: z.object({
-    base: z.number().min(0, "Base price is required"),
-    discount: z.number().optional(),
-    tiered: z.array(z.object({
-      minQty: z.number().optional(),
-      price: z.number().optional(),
-    })).optional(),
-  }),
-  inventory: z.object({
-    quantity: z.number().min(0, "Quantity is required"),
-    sku: z.string().optional(),
-    lowStockThreshold: z.number().optional(),
-    warehouseLocation: z.string().optional(),
-  }),
-  tags: z.array(z.string()).optional(),
-  attributes: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
-  variants: z.array(z.any()).optional(),
-  isActive: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
-  availableFrom: z.string().optional(),
+  attributes: z
+    .array(z.object({ key: z.string(), value: z.string() }))
+    .optional(),
+  variants: z
+    .array(
+      z.object({
+        sku: z.string().min(1, "SKU is required"),
+        size: z.string(),
+        color: z.string(),
+        images: z.array(z.string()),
+        price: z.object({
+          base: z.number(),
+          discount: z.number(),
+          discountType: z.enum(["flat", "percentage"]),
+          finalPrice: z.number(),
+        }),
+        inventory: z.object({
+          quantity: z.number(),
+          lowStockThreshold: z.number(),
+          allowBackorders: z.boolean(),
+        }),
+        stockAvailable: z.boolean(),
+        attributes: z.array(z.object({ key: z.string(), value: z.string() })),
+      })
+    )
+    .optional(),
 });
+
 type ProductFormSchema = z.infer<typeof productSchema>;
 
 export default function ProductFormPage() {
@@ -68,24 +72,13 @@ export default function ProductFormPage() {
   const form = useForm<ProductFormSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: "",
+      title: "",
       slug: "",
       description: "",
       category: "",
       brand: "",
-      tags: [],
-      attributes: [{ key: "", value: "" }],
+      attributes: [],
       variants: [],
-      price: { base: 0, discount: 0, tiered: [] },
-      inventory: {
-        quantity: 0,
-        sku: "",
-        lowStockThreshold: 0,
-        warehouseLocation: "",
-      },
-      isActive: true,
-      isFeatured: false,
-      availableFrom: "",
     },
   });
 
@@ -93,20 +86,14 @@ export default function ProductFormPage() {
     control,
     handleSubmit,
     reset,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting },
   } = form;
 
   const {
-    fields: attributeFields,
-    append: appendAttribute,
-    remove: removeAttribute,
-  } = useFieldArray({ control, name: "attributes" });
-
-  const {
-    fields: tieredFields,
-    append: appendTiered,
-    remove: removeTiered,
-  } = useFieldArray({ control, name: "price.tiered" });
+    fields: variantFields,
+    append: appendVariant,
+    remove: removeVariant,
+  } = useFieldArray({ control, name: "variants" });
 
   useEffect(() => {
     getCategoriesAPI().then((data) => setCategories(data.categories));
@@ -114,57 +101,56 @@ export default function ProductFormPage() {
     if (isEdit && id) {
       setLoading(true);
       getProductByIdAPI(id)
-        .then((product) =>
-          reset({ ...product, availableFrom: product.availableFrom ?? "" })
-        )
+        .then((product) => {
+          reset({
+            ...product,
+            variants:
+              product.variants?.map((v: any) => ({
+                sku: v.sku,
+                size: v.size ?? "",
+                color: v.color ?? "",
+                images: v.images ?? [],
+                price: {
+                  base: v.price?.base ?? 0,
+                  discount: v.price?.discount ?? 0,
+                  discountType: v.price?.discountType ?? "flat",
+                  finalPrice: v.price?.finalPrice ?? 0,
+                },
+                inventory: {
+                  quantity: v.inventory?.quantity ?? 0,
+                  lowStockThreshold: v.inventory?.lowStockThreshold ?? 5,
+                  allowBackorders: v.inventory?.allowBackorders ?? false,
+                },
+                stockAvailable: v.stockAvailable ?? true,
+                attributes: v.attributes ?? [],
+              })) ?? [],
+          });
+        })
         .finally(() => setLoading(false));
     }
   }, [id, isEdit, reset]);
 
   const onSubmit = async (data: ProductFormSchema) => {
-    const cleanedAttributes = (data.attributes ?? []).filter(
-      (attr) => attr.key.trim() !== "" && attr.value.trim() !== ""
-    );
+    try {
+      console.log("Form submitted", data);
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("slug", data.slug);
+      formData.append("category", data.category);
+      formData.append("brand", data.brand ?? "");
+      formData.append("description", data.description ?? "");
+      formData.append("attributes", JSON.stringify(data.attributes ?? []));
+      formData.append("variants", JSON.stringify(data.variants ?? []));
+      if (imageFile) formData.append("mainImage", imageFile);
 
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("slug", data.slug);
-    formData.append("category", data.category);
-    formData.append("brand", data.brand ?? "");
-    formData.append("description", data.description ?? "");
-    formData.append("tags", JSON.stringify(data.tags ?? []));
-    formData.append("attributes", JSON.stringify(cleanedAttributes));
-    formData.append(
-      "price",
-      JSON.stringify({
-        base: Number(data.price.base),
-        discount: Number(data.price.discount),
-        tiered: (data.price.tiered ?? []).map((t) => ({
-          minQty: Number(t.minQty),
-          price: Number(t.price),
-        })),
-      })
-    );
-    formData.append(
-      "inventory",
-      JSON.stringify({
-        quantity: Number(data.inventory.quantity),
-        sku: data.inventory.sku,
-        lowStockThreshold: Number(data.inventory.lowStockThreshold),
-        warehouseLocation: data.inventory.warehouseLocation,
-      })
-    );
-    formData.append("isActive", (data.isActive ?? true).toString());
-    formData.append("isFeatured", (data.isFeatured ?? false).toString());
-    formData.append("availableFrom", data.availableFrom ?? "");
-    if (imageFile) {
-      formData.append("image", imageFile);
+      if (isEdit && id) await updateProductAPI(id, formData);
+      else await createProductAPI(formData);
+
+      navigate("/products");
+    } catch (err) {
+      alert("Failed to create/update product. See console for details.");
+      console.error(err);
     }
-
-    if (isEdit && id) await updateProductAPI(id, formData);
-    else await createProductAPI(formData);
-
-    navigate("/products");
   };
 
   if (loading)
@@ -175,21 +161,34 @@ export default function ProductFormPage() {
     );
 
   return (
-    <Box maxWidth="sm" mx="auto" p={4} component="form" onSubmit={handleSubmit(onSubmit)}>
+    <Box
+      maxWidth="sm"
+      mx="auto"
+      p={4}
+      component="form"
+      onSubmit={handleSubmit(onSubmit, (errors) => {
+        console.error("Validation errors:", errors);
+      })}
+    >
       <Typography variant="h4" gutterBottom>
         {isEdit ? "Edit Product" : "Create Product"}
       </Typography>
 
-      {/* Name */}
       <Controller
-        name="name"
+        name="title"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Product Name" fullWidth sx={{ mb: 2 }} />
+          <TextField
+            {...field}
+            label="Title"
+            fullWidth
+            sx={{ mb: 2 }}
+            error={!!form.formState.errors.title}
+            helperText={form.formState.errors.title?.message}
+          />
         )}
       />
 
-      {/* Slug */}
       <Controller
         name="slug"
         control={control}
@@ -198,12 +197,19 @@ export default function ProductFormPage() {
         )}
       />
 
-      {/* Category */}
       <Controller
         name="category"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Category" select fullWidth sx={{ mb: 2 }}>
+          <TextField
+            {...field}
+            label="Category"
+            select
+            fullWidth
+            sx={{ mb: 2 }}
+            error={!!form.formState.errors.category}
+            helperText={form.formState.errors.category?.message}
+          >
             {categories.map((cat) => (
               <MenuItem key={cat._id} value={cat._id}>
                 {cat.name}
@@ -213,12 +219,19 @@ export default function ProductFormPage() {
         )}
       />
 
-      {/* Brand */}
       <Controller
         name="brand"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Brand" select fullWidth sx={{ mb: 2 }}>
+          <TextField
+            {...field}
+            label="Brand"
+            select
+            fullWidth
+            sx={{ mb: 2 }}
+            error={!!form.formState.errors.brand}
+            helperText={form.formState.errors.brand?.message}
+          >
             {brands.map((brand) => (
               <MenuItem key={brand._id} value={brand._id}>
                 {brand.name}
@@ -228,144 +241,33 @@ export default function ProductFormPage() {
         )}
       />
 
-      {/* Description */}
       <Controller
         name="description"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Description" multiline rows={3} fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-
-      {/* Date Picker */}
-      <Controller
-        name="availableFrom"
-        control={control}
-        render={({ field }) => (
-          <DatePicker
-            label="Available From"
-            value={field.value ? new Date(field.value) : null}
-            onChange={(val) => field.onChange(val ? val.toISOString() : "")}
-            slotProps={{ textField: { fullWidth: true, sx: { mb: 2 } } }}
+          <TextField
+            {...field}
+            label="Description"
+            multiline
+            rows={3}
+            fullWidth
+            sx={{ mb: 2 }}
           />
         )}
       />
 
-      {/* Price */}
-      <Controller
-        name="price.base"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="number" label="Base Price" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-      <Controller
-        name="price.discount"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="number" label="Discount Price" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-
-      {/* Tiered Pricing */}
-      <Box mb={2}>
-        <Typography variant="subtitle1">Tiered Pricing</Typography>
-        {tieredFields.map((item, index) => (
-          <Box key={item.id} display="flex" gap={1} mb={1}>
-            <Controller
-              name={`price.tiered.${index}.minQty`}
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Min Qty" type="number" />
-              )}
-            />
-            <Controller
-              name={`price.tiered.${index}.price`}
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Price" type="number" />
-              )}
-            />
-            <IconButton onClick={(e) => { e.preventDefault(); removeTiered(index); }}>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        ))}
-        <IconButton onClick={(e) => { e.preventDefault(); appendTiered({ minQty: 0, price: 0 }); }}>
-          <AddIcon />
-        </IconButton>
-      </Box>
-
-      {/* Inventory */}
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>Inventory</Typography>
-      <Controller
-        name="inventory.quantity"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="number" label="Stock Quantity" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-      <Controller
-        name="inventory.sku"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} label="SKU" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-      <Controller
-        name="inventory.lowStockThreshold"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} type="number" label="Low Stock Threshold" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-      <Controller
-        name="inventory.warehouseLocation"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} label="Warehouse Location" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
-
-      {/* Attributes */}
-      <Typography variant="subtitle1" sx={{ mt: 3 }}>Attributes</Typography>
-      {attributeFields.map((item, index) => (
-        <Box key={item.id} display="flex" gap={1} mb={1}>
-          <Controller
-            name={`attributes.${index}.key`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Key" error={!!errors.attributes?.[index]?.key} helperText={errors.attributes?.[index]?.key?.message} />
-            )}
-          />
-          <Controller
-            name={`attributes.${index}.value`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Value" error={!!errors.attributes?.[index]?.value} helperText={errors.attributes?.[index]?.value?.message} />
-            )}
-          />
-          <IconButton onClick={(e) => { e.preventDefault(); removeAttribute(index); }}>
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      ))}
-      <IconButton onClick={(e) => { e.preventDefault(); appendAttribute({ key: "", value: "" }); }}>
-        <AddIcon />
-      </IconButton>
-
-      {/* Image Upload */}
       <Box mt={3} mb={2}>
-        <Typography variant="subtitle1">Product Image</Typography>
+        <Typography variant="subtitle1">Main Image</Typography>
         <input
           type="file"
           accept="image/*"
-          onChange={e => {
+          onChange={(e) => {
             const file = e.target.files?.[0] || null;
             setImageFile(file);
             if (file) {
               const reader = new FileReader();
-              reader.onload = ev => setImagePreview(ev.target?.result as string);
+              reader.onload = (ev) =>
+                setImagePreview(ev.target?.result as string);
               reader.readAsDataURL(file);
             } else {
               setImagePreview(null);
@@ -374,21 +276,222 @@ export default function ProductFormPage() {
         />
         {imagePreview && (
           <Box mt={1}>
-            <img src={imagePreview} alt="Preview" style={{ maxWidth: 200, maxHeight: 200 }} />
+            <img
+              src={imagePreview}
+              alt="Preview"
+              style={{ maxWidth: 200, maxHeight: 200 }}
+            />
           </Box>
         )}
       </Box>
 
-      <FormControlLabel
-        control={<Controller name="isActive" control={control} render={({ field }) => <Checkbox {...field} checked={field.value} />} />}
-        label="Active"
-      />
-      <FormControlLabel
-        control={<Controller name="isFeatured" control={control} render={({ field }) => <Checkbox {...field} checked={field.value} />} />}
-        label="Featured"
-      />
+      <Typography variant="h6" mt={4} mb={2}>
+        Variants
+      </Typography>
 
-      <Button type="submit" variant="contained" color="primary" disabled={isSubmitting} fullWidth sx={{ mt: 2 }}>
+      {variantFields.map((variant, index) => (
+        <Box
+          key={variant.id}
+          mb={3}
+          p={2}
+          border={1}
+          borderColor="grey.300"
+          borderRadius={2}
+        >
+          <Typography variant="subtitle2" mb={1}>
+            Variant #{index + 1}
+          </Typography>
+
+          <Controller
+            name={`variants.${index}.sku`}
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="SKU" fullWidth sx={{ mb: 2 }} />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.size`}
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Size" fullWidth sx={{ mb: 2 }} />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.color`}
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Color" fullWidth sx={{ mb: 2 }} />
+            )}
+          />
+          <Controller
+            name={`variants.${index}.price.base`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Base Price"
+                type="number"
+                fullWidth
+                sx={{ mb: 2 }}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : +e.target.value
+                  )
+                }
+              />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.price.discount`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Discount"
+                type="number"
+                fullWidth
+                sx={{ mb: 2 }}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : +e.target.value
+                  )
+                }
+              />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.price.discountType`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Discount Type"
+                select
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                <MenuItem value="flat">Flat</MenuItem>
+                <MenuItem value="percentage">Percentage</MenuItem>
+              </TextField>
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.price.finalPrice`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Final Price"
+                type="number"
+                fullWidth
+                sx={{ mb: 2 }}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : +e.target.value
+                  )
+                }
+              />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.inventory.quantity`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Quantity"
+                type="number"
+                fullWidth
+                sx={{ mb: 2 }}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : +e.target.value
+                  )
+                }
+              />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.inventory.lowStockThreshold`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Low Stock Threshold"
+                type="number"
+                fullWidth
+                sx={{ mb: 2 }}
+              />
+            )}
+          />
+
+          <Controller
+            name={`variants.${index}.inventory.allowBackorders`}
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={<Checkbox {...field} checked={field.value} />}
+                label="Allow Backorders"
+              />
+            )}
+          />
+
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              removeVariant(index);
+            }}
+            color="error"
+            variant="outlined"
+          >
+            Remove Variant
+          </Button>
+        </Box>
+      ))}
+
+      <Button
+        onClick={(e) => {
+          e.preventDefault();
+          appendVariant({
+            sku: "SKU-" + Date.now(),
+            size: "",
+            color: "",
+            price: {
+              base: 0,
+              discount: 0,
+              discountType: "flat",
+              finalPrice: 0,
+            },
+            inventory: {
+              quantity: 0,
+              lowStockThreshold: 5,
+              allowBackorders: false,
+            },
+            stockAvailable: true,
+            images: [],
+            attributes: [],
+          });
+        }}
+        startIcon={<AddIcon />}
+        sx={{ mb: 3 }}
+      >
+        Add Variant
+      </Button>
+
+      <Button
+        type="submit"
+        variant="contained"
+        color="primary"
+        disabled={isSubmitting}
+        fullWidth
+      >
         {isSubmitting ? "Submitting..." : "Submit"}
       </Button>
     </Box>

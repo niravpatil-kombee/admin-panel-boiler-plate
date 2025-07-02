@@ -13,22 +13,22 @@ export const getProductsAPI = async (): Promise<GetProductsResponse> => {
 };
 
 export const getProductByIdAPI = async (id: string): Promise<Product> => {
-  const { data } = await axios.get(`/product/${id}`);
-  return data;
+  const { data } = await axios.get<{ product: Product }>(`/product/${id}`);
+  return data.product;
 };
 
 export const createProductAPI = async (formData: FormData): Promise<Product> => {
-  const { data } = await axios.post('/product', formData, {
+  const { data } = await axios.post<{ product: Product }>('/product', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
-  return data;
+  return data.product;
 };
 
 export const updateProductAPI = async (id: string, formData: FormData): Promise<Product> => {
-  const { data } = await axios.put(`/product/${id}`, formData, {
+  const { data } = await axios.put<{ product: Product }>(`/product/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
-  return data;
+  return data.product;
 };
 
 export const deleteProductAPI = async (id: string): Promise<void> => {

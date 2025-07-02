@@ -21,51 +21,6 @@ export interface IUser extends Document {
   resetPasswordExpires?: Date;
 }
 
-export interface IProduct {
-  name: string;
-  slug: string;
-  description?: string;
-  category: Types.ObjectId;
-  brand?: Types.ObjectId;
-  tags?: string[];
-  attributes?: IProductAttribute[];
-  variants?: IProductVariant[];
-  images: IProductImage[];
-  price: IProductPrice;
-  inventory: IProductInventory;
-  isFeatured?: boolean;
-  isActive: boolean;
-}
-
-export interface IProductImage {
-  url: string;
-  alt?: string;
-  isFeatured?: boolean;
-  position?: number;
-}
-
-export interface IProductPrice {
-  base: number;
-  discount?: number;
-  tiered?: { minQty: number; price: number }[];
-}
-
-export interface IProductInventory {
-  quantity: number;
-  sku?: string;
-  lowStockThreshold?: number;
-  warehouseLocation?: string;
-}
-
-export interface IProductAttribute {
-  key: string;
-  value: string;
-}
-
-export interface IProductVariant {
-  name: string;
-  options: string[];
-}
 
 export interface ICategory {
   name: string;
@@ -88,6 +43,53 @@ export interface ICollection {
   description?: string;
   image?: string;
   products: Types.ObjectId[];
+}
+
+export interface IProductAttribute {
+  key: string;
+  value: string | number | boolean;
+}
+
+export interface IPrice {
+  currency: string;
+  base: number;
+  discount: number;
+  discountType: 'flat' | 'percentage';
+  finalPrice: number;
+}
+
+export interface IInventory {
+  quantity: number;
+  lowStockThreshold: number;
+  allowBackorders: boolean;
+}
+
+export interface IVariant {
+  sku: string;
+  size: string;
+  color: string;
+  images: string[];
+  price: IPrice;
+  inventory: IInventory;
+  stockAvailable: boolean;
+  attributes: IProductAttribute[];
+}
+
+export interface IProduct extends Document {
+  title: string;
+  description?: string;
+  slug: string;
+  mainImage: string;
+  category: Types.ObjectId;
+  brand: Types.ObjectId;
+  variants: IVariant[];
+  attributes: IProductAttribute[];
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+  createdBy?: Types.ObjectId;
+  updatedBy?: Types.ObjectId;
 }
  
   
