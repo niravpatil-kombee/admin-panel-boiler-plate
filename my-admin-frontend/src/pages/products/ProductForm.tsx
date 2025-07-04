@@ -2,14 +2,11 @@ import { useForm, useFieldArray, Controller } from "react-hook-form";
 import {
   Box,
   Button,
-  Checkbox,
   CircularProgress,
-  FormControlLabel,
   MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Category, Brand } from "../../types/product";
@@ -22,6 +19,7 @@ import { getCategoriesAPI } from "../../services/category.api";
 import { getBrandsAPI } from "../../services/brand.api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import VariantForm from './VariantForm';
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -289,201 +287,13 @@ export default function ProductFormPage() {
         Variants
       </Typography>
 
-      {variantFields.map((variant, index) => (
-        <Box
-          key={variant.id}
-          mb={3}
-          p={2}
-          border={1}
-          borderColor="grey.300"
-          borderRadius={2}
-        >
-          <Typography variant="subtitle2" mb={1}>
-            Variant #{index + 1}
-          </Typography>
-
-          <Controller
-            name={`variants.${index}.sku`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="SKU" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.size`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Size" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.color`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Color" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
-          <Controller
-            name={`variants.${index}.price.base`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Base Price"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.price.discount`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Discount"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.price.discountType`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Discount Type"
-                select
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                <MenuItem value="flat">Flat</MenuItem>
-                <MenuItem value="percentage">Percentage</MenuItem>
-              </TextField>
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.price.finalPrice`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Final Price"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.quantity`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Quantity"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.lowStockThreshold`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Low Stock Threshold"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.allowBackorders`}
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Checkbox {...field} checked={field.value} />}
-                label="Allow Backorders"
-              />
-            )}
-          />
-
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              removeVariant(index);
-            }}
-            color="error"
-            variant="outlined"
-          >
-            Remove Variant
-          </Button>
-        </Box>
-      ))}
-
-      <Button
-        onClick={(e) => {
-          e.preventDefault();
-          appendVariant({
-            sku: "SKU-" + Date.now(),
-            size: "",
-            color: "",
-            price: {
-              base: 0,
-              discount: 0,
-              discountType: "flat",
-              finalPrice: 0,
-            },
-            inventory: {
-              quantity: 0,
-              lowStockThreshold: 5,
-              allowBackorders: false,
-            },
-            stockAvailable: true,
-            images: [],
-            attributes: [],
-          });
-        }}
-        startIcon={<AddIcon />}
-        sx={{ mb: 3 }}
-      >
-        Add Variant
-      </Button>
+      <VariantForm
+        fields={variantFields}
+        append={appendVariant}
+        remove={removeVariant}
+        control={control}
+        errors={form.formState.errors}
+      />
 
       <Button
         type="submit"

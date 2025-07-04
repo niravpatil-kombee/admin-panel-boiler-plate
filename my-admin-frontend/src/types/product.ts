@@ -71,7 +71,7 @@ export interface Product {
   brand: string;
   attributes?: Attribute[];
   variants?: Variant[];
-  images?: Image[];
+  mainImage?: Image[];
   price?: Price;
   inventory?: Inventory;
   tags?: string[];

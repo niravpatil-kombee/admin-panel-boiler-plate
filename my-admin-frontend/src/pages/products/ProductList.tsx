@@ -8,7 +8,6 @@ import {
   CardActions,
   IconButton,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -54,9 +53,31 @@ export default function ProductListPage() {
     }
   };
 
+  const getImageUrl = (product: Product) => {
+    // If mainImage is a non-empty string, use it
+    if (typeof product.mainImage === "string" && product.mainImage) {
+      return product.mainImage;
+    }
+    // If images is an array and has at least one image with a url, use it
+    if (Array.isArray((product as any).images) && (product as any).images.length > 0 && (product as any).images[0].url) {
+      return (product as any).images[0].url;
+    }
+    // If the first variant has images, use that
+    const mainVariant = product.variants?.[0];
+    if (mainVariant && Array.isArray(mainVariant.images) && mainVariant.images.length > 0) {
+      return mainVariant.images[0];
+    }
+    // Fallback to placeholder
+    return "/placeholder.png";
+  };
+
   return (
     <Box>
-      <PageHeader title="Product Management" buttonText="Add Product" buttonLink="/products/new" />
+      <PageHeader
+        title="Product Management"
+        buttonText="Add Product"
+        buttonLink="/products/new"
+      />
 
       {loading ? (
         <Box display="flex" justifyContent="center" py={5}>
@@ -74,12 +95,16 @@ export default function ProductListPage() {
             const mainVariant = product.variants?.[0];
             const basePrice = mainVariant?.price?.base ?? product.price?.base ?? 0;
             const discount = mainVariant?.price?.discount ?? product.price?.discount ?? 0;
-            const finalPrice = mainVariant?.price?.finalPrice ?? product.price?.finalPrice ?? basePrice;
-            const imageUrl =
-              product.images?.[0]?.url ??
-              mainVariant?.images?.[0] ??
-              '/placeholder.png';
-            const stock = mainVariant?.inventory?.quantity ?? product.inventory?.quantity ?? 0;
+            const finalPrice =
+              mainVariant?.price?.finalPrice ??
+              product.price?.finalPrice ??
+              basePrice;
+
+            const imageUrl = getImageUrl(product);
+            const stock =
+              mainVariant?.inventory?.quantity ??
+              product.inventory?.quantity ??
+              0;
 
             return (
               <Box
@@ -99,8 +124,6 @@ export default function ProductListPage() {
                         : `http://localhost:5001${imageUrl}`
                     }
                     alt={product.title}
-
-                   
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6">{product.title}</Typography>
@@ -118,7 +141,6 @@ export default function ProductListPage() {
                     <Typography variant="body2" color="text.secondary">
                       Stock: {stock}
                     </Typography>
-
                   </CardContent>
                   <CardActions>
                     <IconButton onClick={() => handleEdit(product._id!)}>
