@@ -1,4 +1,12 @@
-import { Box, Button, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { Controller } from "react-hook-form";
 import type { Control, FieldErrors } from "react-hook-form";
@@ -10,14 +18,20 @@ interface VariantFormProps {
   remove: (index: number) => void;
   control: Control<any>;
   errors: FieldErrors<any>;
+  isEdit: boolean;
 }
 
-const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, control, errors }) => {
+const VariantForm: React.FC<VariantFormProps> = ({
+  fields,
+  append,
+  remove,
+  control,
+}) => {
   return (
     <>
       {fields.map((variant, index) => (
         <Box
-          key={variant.id}
+          key={variant.id || index}
           mb={3}
           p={2}
           border={1}
@@ -155,6 +169,11 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
                 type="number"
                 fullWidth
                 sx={{ mb: 2 }}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : +e.target.value
+                  )
+                }
               />
             )}
           />
@@ -169,6 +188,8 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
               />
             )}
           />
+
+          {/* Variant Image Upload */}
           <Controller
             name={`variants.${index}.images`}
             control={control}
@@ -181,10 +202,27 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    const imagePaths = files.map((file) => URL.createObjectURL(file));
-                    field.onChange(imagePaths);
+                    field.onChange(files);
                   }}
                 />
+                <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+                  {Array.isArray(field.value) &&
+                    field.value.length > 0 &&
+                    (field.value as File[]).map((file, i) => (
+                      <img
+                        key={i}
+                        src={URL.createObjectURL(file)}
+                        alt={`preview-${i}`}
+                        style={{
+                          width: 80,
+                          height: 80,
+                          objectFit: "cover",
+                          borderRadius: 4,
+                          border: "1px solid #ccc",
+                        }}
+                      />
+                    ))}
+                </Box>
               </Box>
             )}
           />
@@ -196,6 +234,7 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
             }}
             color="error"
             variant="outlined"
+            sx={{ mt: 1 }}
           >
             Remove Variant
           </Button>
@@ -227,6 +266,7 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
         }}
         startIcon={<AddIcon />}
         sx={{ mb: 3 }}
+        variant="outlined"
       >
         Add Variant
       </Button>
@@ -234,4 +274,4 @@ const VariantForm: React.FC<VariantFormProps> = ({ fields, append, remove, contr
   );
 };
 
-export default VariantForm; 
+export default VariantForm;

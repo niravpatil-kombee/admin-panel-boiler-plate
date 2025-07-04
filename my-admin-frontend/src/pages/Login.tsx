@@ -1,11 +1,14 @@
 import { useForm } from 'react-hook-form';
 import type { SubmitHandler } from 'react-hook-form';
-import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, IconButton, InputAdornment } from '@mui/material';
 import useAuth from '../hooks/useAuth';
 import type { LoginCredentials } from '../types/auth';
 import { useSnackbar } from 'notistack';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 const loginSchema = z.object({
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -20,6 +23,7 @@ export default function LoginPage() {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginSchema>({
         resolver: zodResolver(loginSchema),
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     const onSubmit: SubmitHandler<LoginSchema> = async (data) => {
         try {
@@ -55,12 +59,25 @@ export default function LoginPage() {
                         required
                         fullWidth
                         label="Password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         id="password"
                         autoComplete="current-password"
                         {...register('password')}
                         error={!!errors.password}
                         helperText={errors.password?.message}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        onClick={() => setShowPassword((show) => !show)}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                     />
                     <Button
                         type="submit"

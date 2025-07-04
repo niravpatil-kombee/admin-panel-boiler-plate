@@ -39,7 +39,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, 
+      maxAge:  60 * 60 * 1000, 
     },
   })
 );
@@ -55,6 +55,8 @@ app.post("/api/refresh-session", (req, res) => {
   console.log("User:", req.user);
 
   if (req.isAuthenticated()) {
+    const user = req.user; // preserve user before regenerating
+
     //regenerate session
     req.session.regenerate((err) => {
       if (err) {
@@ -70,11 +72,12 @@ app.post("/api/refresh-session", (req, res) => {
         }
 
         //Reset the maxAge of the cookie
-        req.session.cookie.maxAge = 60 * 60 * 1000; // 1 hr
+        req.session.cookie.maxAge = 30000; // 1 hr
 
         return res.json({
           message: "Session refreshed successfully",
           expiresIn: req.session.cookie.maxAge,
+          user: req.user, 
         });
       });
     });

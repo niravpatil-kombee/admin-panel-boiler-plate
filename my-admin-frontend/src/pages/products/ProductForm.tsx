@@ -19,7 +19,7 @@ import { getCategoriesAPI } from "../../services/category.api";
 import { getBrandsAPI } from "../../services/brand.api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import VariantForm from './VariantForm';
+import VariantForm from "./VariantForm";
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -36,7 +36,7 @@ const productSchema = z.object({
         sku: z.string().min(1, "SKU is required"),
         size: z.string(),
         color: z.string(),
-        images: z.array(z.string()),
+        images: z.array(z.union([z.string(), z.instanceof(File)])), 
         price: z.object({
           base: z.number(),
           discount: z.number(),
@@ -45,7 +45,7 @@ const productSchema = z.object({
         }),
         inventory: z.object({
           quantity: z.number(),
-          lowStockThreshold: z.number(),
+          lowStockThreshold: z.number().optional(),
           allowBackorders: z.boolean(),
         }),
         stockAvailable: z.boolean(),
@@ -129,16 +129,37 @@ export default function ProductFormPage() {
   }, [id, isEdit, reset]);
 
   const onSubmit = async (data: ProductFormSchema) => {
+    console.log("Form data:", data);
     try {
-      console.log("Form submitted", data);
       const formData = new FormData();
+
       formData.append("title", data.title);
       formData.append("slug", data.slug);
       formData.append("category", data.category);
       formData.append("brand", data.brand ?? "");
       formData.append("description", data.description ?? "");
       formData.append("attributes", JSON.stringify(data.attributes ?? []));
-      formData.append("variants", JSON.stringify(data.variants ?? []));
+
+      // Transform variants before appending
+      const variantPayload =
+        data.variants?.map((variant, idx) => {
+          // Append each image file to FormData
+          if (variant.images && Array.isArray(variant.images)) {
+            variant.images.forEach((file, fileIndex) => {
+              formData.append(`variantImages_${idx}_${fileIndex}`, file); // backend must support this
+            });
+          }
+
+          return {
+            ...variant,
+            images: variant.images.map(
+              (_, fileIndex) => `variantImages_${idx}_${fileIndex}`
+            ),
+          };
+        }) ?? [];
+
+      formData.append("variants", JSON.stringify(variantPayload));
+
       if (imageFile) formData.append("mainImage", imageFile);
 
       if (isEdit && id) await updateProductAPI(id, formData);
@@ -166,6 +187,7 @@ export default function ProductFormPage() {
       component="form"
       onSubmit={handleSubmit(onSubmit, (errors) => {
         console.error("Validation errors:", errors);
+        alert(JSON.stringify(errors, null, 2));
       })}
     >
       <Typography variant="h4" gutterBottom>
@@ -293,6 +315,7 @@ export default function ProductFormPage() {
         remove={removeVariant}
         control={control}
         errors={form.formState.errors}
+        isEdit={isEdit}
       />
 
       <Button
