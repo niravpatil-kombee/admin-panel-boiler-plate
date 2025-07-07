@@ -7,12 +7,18 @@ export interface GetBrandsResponse {
   brands: Brand[];
 }
 
+export interface GetBrandsResponseById {
+  message: string;
+  brand: Brand; 
+}
+
+
 export const getBrandsAPI = async (): Promise<GetBrandsResponse> => {
   const { data } = await axios.get('/brands');
   return data;
 };
 
-export const getBrandByIdAPI = async (id: string): Promise<Brand> => {
+export const getBrandByIdAPI = async (id: string): Promise<GetBrandsResponseById> => {
   const { data } = await axios.get(`/brands/${id}`);
   return data;
 };

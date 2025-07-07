@@ -36,7 +36,7 @@ const productSchema = z.object({
         sku: z.string().min(1, "SKU is required"),
         size: z.string(),
         color: z.string(),
-        images: z.array(z.union([z.string(), z.instanceof(File)])), 
+        images: z.array(z.union([z.string(), z.instanceof(File)])),
         price: z.object({
           base: z.number(),
           discount: z.number(),
@@ -93,43 +93,56 @@ export default function ProductFormPage() {
     remove: removeVariant,
   } = useFieldArray({ control, name: "variants" });
 
+  const {
+    fields: attributeFields,
+    append: appendAttribute,
+    remove: removeAttribute,
+  } = useFieldArray({ control, name: "attributes" });
+
   useEffect(() => {
     getCategoriesAPI().then((data) => setCategories(data.categories));
     getBrandsAPI().then((data) => setBrands(data.brands));
+  
     if (isEdit && id) {
       setLoading(true);
       getProductByIdAPI(id)
         .then((product) => {
+          if (!product) throw new Error("Product not found");
           reset({
             ...product,
-            variants:
-              product.variants?.map((v: any) => ({
-                sku: v.sku,
-                size: v.size ?? "",
-                color: v.color ?? "",
-                images: v.images ?? [],
-                price: {
-                  base: v.price?.base ?? 0,
-                  discount: v.price?.discount ?? 0,
-                  discountType: v.price?.discountType ?? "flat",
-                  finalPrice: v.price?.finalPrice ?? 0,
-                },
-                inventory: {
-                  quantity: v.inventory?.quantity ?? 0,
-                  lowStockThreshold: v.inventory?.lowStockThreshold ?? 5,
-                  allowBackorders: v.inventory?.allowBackorders ?? false,
-                },
-                stockAvailable: v.stockAvailable ?? true,
-                attributes: v.attributes ?? [],
-              })) ?? [],
+            attributes: product.attributes ?? [],
+            variants: (product.variants ?? []).map((v: any) => ({
+              sku: v.sku,
+              size: v.size ?? "",
+              color: v.color ?? "",
+              images: v.images ?? [],
+              price: {
+                base: v.price?.base ?? 0,
+                discount: v.price?.discount ?? 0,
+                discountType: v.price?.discountType ?? "flat",
+                finalPrice: v.price?.finalPrice ?? 0,
+              },
+              inventory: {
+                quantity: v.inventory?.quantity ?? 0,
+                lowStockThreshold: v.inventory?.lowStockThreshold ?? 5,
+                allowBackorders: v.inventory?.allowBackorders ?? false,
+              },
+              stockAvailable: v.stockAvailable ?? true,
+              attributes: v.attributes ?? [],
+            })),
           });
+        })
+        .catch((err) => {
+          console.error("Failed to fetch product:", err);
+          alert("Product not found or failed to fetch.");
+          navigate("/products");
         })
         .finally(() => setLoading(false));
     }
   }, [id, isEdit, reset]);
+  
 
   const onSubmit = async (data: ProductFormSchema) => {
-    console.log("Form data:", data);
     try {
       const formData = new FormData();
 
@@ -140,13 +153,11 @@ export default function ProductFormPage() {
       formData.append("description", data.description ?? "");
       formData.append("attributes", JSON.stringify(data.attributes ?? []));
 
-      // Transform variants before appending
       const variantPayload =
         data.variants?.map((variant, idx) => {
-          // Append each image file to FormData
           if (variant.images && Array.isArray(variant.images)) {
             variant.images.forEach((file, fileIndex) => {
-              formData.append(`variantImages_${idx}_${fileIndex}`, file); // backend must support this
+              formData.append(`variantImages_${idx}_${fileIndex}`, file);
             });
           }
 
@@ -185,10 +196,7 @@ export default function ProductFormPage() {
       mx="auto"
       p={4}
       component="form"
-      onSubmit={handleSubmit(onSubmit, (errors) => {
-        console.error("Validation errors:", errors);
-        alert(JSON.stringify(errors, null, 2));
-      })}
+      onSubmit={handleSubmit(onSubmit)}
     >
       <Typography variant="h4" gutterBottom>
         {isEdit ? "Edit Product" : "Create Product"}
@@ -276,6 +284,46 @@ export default function ProductFormPage() {
         )}
       />
 
+      {/* Attributes Section */}
+      <Typography variant="h6" mt={4} mb={1}>
+        Product Attributes
+      </Typography>
+
+      {attributeFields.map((item, index) => (
+        <Box key={item.id} display="flex" gap={2} mb={2}>
+          <Controller
+            name={`attributes.${index}.key`}
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Key" fullWidth />
+            )}
+          />
+          <Controller
+            name={`attributes.${index}.value`}
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Value" fullWidth />
+            )}
+          />
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => removeAttribute(index)}
+          >
+            Remove
+          </Button>
+        </Box>
+      ))}
+
+      <Button
+        variant="contained"
+        onClick={() => appendAttribute({ key: "", value: "" })}
+        sx={{ mb: 2 }}
+      >
+        Add Attribute
+      </Button>
+
+      {/* Main Image Upload */}
       <Box mt={3} mb={2}>
         <Typography variant="subtitle1">Main Image</Typography>
         <input
@@ -305,11 +353,13 @@ export default function ProductFormPage() {
         )}
       </Box>
 
+      {/* Variants Section */}
       <Typography variant="h6" mt={4} mb={2}>
         Variants
       </Typography>
 
       <VariantForm
+        key={variantFields.length + JSON.stringify(form.getValues("variants"))}
         fields={variantFields}
         append={appendVariant}
         remove={removeVariant}

@@ -76,11 +76,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
                 type="number"
                 fullWidth
                 sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
@@ -95,11 +91,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
                 type="number"
                 fullWidth
                 sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
@@ -131,11 +123,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
                 type="number"
                 fullWidth
                 sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
@@ -150,11 +138,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
                 type="number"
                 fullWidth
                 sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
+                onChange={(e) => field.onChange(e.target.value)}
               />
             )}
           />
@@ -208,20 +192,24 @@ const VariantForm: React.FC<VariantFormProps> = ({
                 <Box mt={1} display="flex" gap={1} flexWrap="wrap">
                   {Array.isArray(field.value) &&
                     field.value.length > 0 &&
-                    (field.value as File[]).map((file, i) => (
-                      <img
-                        key={i}
-                        src={URL.createObjectURL(file)}
-                        alt={`preview-${i}`}
-                        style={{
-                          width: 80,
-                          height: 80,
-                          objectFit: "cover",
-                          borderRadius: 4,
-                          border: "1px solid #ccc",
-                        }}
-                      />
-                    ))}
+                    field.value.map((img: string | File, i: number) => {
+                      const src =
+                        img instanceof File ? URL.createObjectURL(img) : img;
+                      return (
+                        <img
+                          key={i}
+                          src={src}
+                          alt={`preview-${i}`}
+                          style={{
+                            width: 80,
+                            height: 80,
+                            objectFit: "cover",
+                            borderRadius: 4,
+                            border: "1px solid #ccc",
+                          }}
+                        />
+                      );
+                    })}
                 </Box>
               </Box>
             )}

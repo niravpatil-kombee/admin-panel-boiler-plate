@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { Box, Button, Container, Paper, TextField, Typography } from '@mui/material';
 import { getBrandByIdAPI, createBrandAPI, updateBrandAPI } from '../../services/brand.api';
-import type { Brand } from '../../types/product';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -17,18 +16,25 @@ export default function BrandFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<Brand>({
+
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof brandSchema>>({
     resolver: zodResolver(brandSchema),
     defaultValues: { name: '', slug: '', description: '' },
   });
 
   useEffect(() => {
     if (isEdit && id) {
-      getBrandByIdAPI(id).then(reset);
+      getBrandByIdAPI(id).then(({ brand }) => {
+        reset({
+          name: brand.name ?? '',
+          slug: brand.slug ?? '',
+          description: brand.description ?? '',
+        });
+      });
     }
   }, [id, isEdit, reset]);
 
-  const onSubmit = async (data: Brand) => {
+  const onSubmit = async (data: z.infer<typeof brandSchema>) => {
     if (isEdit && id) await updateBrandAPI(id, data);
     else await createBrandAPI(data);
     navigate('/brands');

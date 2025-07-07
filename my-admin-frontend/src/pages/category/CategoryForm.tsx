@@ -1,9 +1,21 @@
-import { useForm, Controller } from 'react-hook-form';
-import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import type { Category } from '../../types/product';
-import { createCategoryAPI, getCategoryByIdAPI, updateCategoryAPI, getCategoriesAPI } from '../../services/category.api';
+import { useForm, Controller } from "react-hook-form";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import type { Category } from "../../types/product";
+import {
+  createCategoryAPI,
+  getCategoryByIdAPI,
+  updateCategoryAPI,
+  getCategoriesAPI,
+} from "../../services/category.api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -21,30 +33,46 @@ export default function CategoryFormPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const form = useForm<Category>({
+  const form = useForm<z.infer<typeof categorySchema>>({
     defaultValues: {
-      name: '',
-      slug: '',
-      description: '',
-      parent: '',
+      name: "",
+      slug: "",
+      description: "",
+      parent: "",
     },
     resolver: zodResolver(categorySchema),
   });
-  const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = form;
 
   useEffect(() => {
-    // Fetch all categories for parent select
-    getCategoriesAPI().then((data) => setCategories(data.categories));
-    if (isEdit && id) {
+    // Fetch all categories
+    getCategoriesAPI()
+      .then((data) => setCategories(data.categories))
+      .catch((err) => console.error("Failed to fetch categories:", err));
+  
+    if (id) {
       setLoading(true);
       getCategoryByIdAPI(id)
-        .then((category) => reset({
-          ...category,
-          parent: category.parent || '',
-        }))
+        .then(({ category }) => {
+          reset({
+            name: category.name ?? "",
+            slug: category.slug ?? "",
+            description: category.description ?? "",
+            parent:
+              typeof category.parent === "object" && category.parent !== null && "_id" in category.parent
+                ? category.parent._id
+                : category.parent ?? "",
+          });
+        })
         .finally(() => setLoading(false));
     }
   }, [id, isEdit, reset]);
+  
 
   const onSubmit = async (data: Category) => {
     const payload = {
@@ -55,21 +83,39 @@ export default function CategoryFormPage() {
     };
     if (isEdit && id) await updateCategoryAPI(id, payload);
     else await createCategoryAPI(payload);
-    navigate('/categories');
+    navigate("/categories");
   };
 
-  if (loading) return <Box textAlign="center" mt={4}><CircularProgress /></Box>;
+  if (loading)
+    return (
+      <Box textAlign="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
 
   return (
-    <Box maxWidth="sm" mx="auto" p={4} component="form" onSubmit={handleSubmit(onSubmit)}>
-      <Typography variant="h4" gutterBottom>{isEdit ? 'Edit Category' : 'Create Category'}</Typography>
+    <Box
+      maxWidth="sm"
+      mx="auto"
+      p={4}
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      <Typography variant="h4" gutterBottom>
+        {isEdit ? "Edit Category" : "Create Category"}
+      </Typography>
 
       {/* Name */}
       <Controller
         name="name"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Category Name" fullWidth sx={{ mb: 2 }} />
+          <TextField
+            {...field}
+            label="Category Name"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
         )}
       />
 
@@ -87,7 +133,14 @@ export default function CategoryFormPage() {
         name="description"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Description" multiline rows={3} fullWidth sx={{ mb: 2 }} />
+          <TextField
+            {...field}
+            label="Description"
+            multiline
+            rows={3}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
         )}
       />
 
@@ -96,18 +149,28 @@ export default function CategoryFormPage() {
         name="parent"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Parent Category" select fullWidth sx={{ mb: 2 }}>
+          <TextField
+            {...field}
+            label="Parent Category"
+            select
+            fullWidth
+            sx={{ mb: 2 }}
+          >
             <MenuItem value="">None</MenuItem>
-            {categories.filter((cat) => !isEdit || cat._id !== id).map((cat) => (
-              <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>
-            ))}
+            {categories
+              .filter((cat) => !isEdit || cat._id !== id)
+              .map((cat) => (
+                <MenuItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
           </TextField>
         )}
       />
 
       <Box display="flex" justifyContent="flex-end">
         <Button variant="contained" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Category'}
+          {isSubmitting ? "Saving..." : "Save Category"}
         </Button>
       </Box>
     </Box>

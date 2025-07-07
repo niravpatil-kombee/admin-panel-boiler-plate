@@ -3,7 +3,7 @@ export interface Category {
     name: string;
     slug: string;
     description?: string;
-    parent?: string;
+    parent?: string | null | { _id: string; name: string };
     createdAt?: string;
     updatedAt?: string;
   }
