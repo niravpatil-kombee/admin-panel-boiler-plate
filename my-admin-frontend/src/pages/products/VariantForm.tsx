@@ -11,6 +11,8 @@ import AddIcon from "@mui/icons-material/Add";
 import { Controller } from "react-hook-form";
 import type { Control, FieldErrors } from "react-hook-form";
 import React from "react";
+import { z } from "zod";
+import type { Attribute } from "../../types/product";
 
 interface VariantFormProps {
   fields: any[];
@@ -18,14 +20,37 @@ interface VariantFormProps {
   remove: (index: number) => void;
   control: Control<any>;
   errors: FieldErrors<any>;
-  isEdit: boolean;
+  variantAttributes: Attribute[];
 }
+
+export const attributeValueSchema = z.object({
+  attributeId: z.string().min(1),
+  value: z.union([z.string().min(1), z.instanceof(File)]),
+});
+
+export const inventorySchema = z.object({
+  sku: z.string().min(1),
+  quantity: z.coerce.number().nonnegative(),
+  lowStockThreshold: z.coerce.number().optional(),
+  allowBackorder: z.boolean().optional(),
+});
+
+export const variantSchema = z.object({
+  name: z.string().min(1),
+  sku: z.string().min(1),
+  price: z.coerce.number().nonnegative(),
+  stock: z.coerce.number().nonnegative(),
+  images: z.any().optional(),
+  inventory: inventorySchema,
+  attributes: z.array(attributeValueSchema),
+});
 
 const VariantForm: React.FC<VariantFormProps> = ({
   fields,
   append,
   remove,
   control,
+  variantAttributes,
 }) => {
   return (
     <>
@@ -38,163 +63,128 @@ const VariantForm: React.FC<VariantFormProps> = ({
           borderColor="grey.300"
           borderRadius={2}
         >
-          <Typography variant="subtitle2" mb={1}>
+          <Typography variant="subtitle2" mb={2}>
             Variant #{index + 1}
           </Typography>
 
-          <Controller
-            name={`variants.${index}.sku`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="SKU" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
+          {/* Name + SKU */}
+          <Box display="flex" gap={2} mb={2}>
+            <Controller
+              name={`variants.${index}.name`}
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} label="Variant Name" fullWidth />
+              )}
+            />
+            <Controller
+              name={`variants.${index}.sku`}
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} label="SKU" fullWidth />
+              )}
+            />
+          </Box>
 
-          <Controller
-            name={`variants.${index}.size`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Size" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
+          {/* Price + Stock */}
+          <Box display="flex" gap={2} mb={2}>
+            <Controller
+              name={`variants.${index}.price`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Price"
+                  type="number"
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name={`variants.${index}.stock`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Stock"
+                  type="number"
+                  fullWidth
+                />
+              )}
+            />
+          </Box>
 
-          <Controller
-            name={`variants.${index}.color`}
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Color" fullWidth sx={{ mb: 2 }} />
-            )}
-          />
+          <Typography variant="subtitle2" mt={2} mb={1}>
+            Inventory
+          </Typography>
 
-          <Controller
-            name={`variants.${index}.price.base`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Base Price"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
+          {/* Inventory SKU + Quantity */}
+          <Box display="flex" gap={2} mb={2}>
+            <Controller
+              name={`variants.${index}.inventory.sku`}
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} label="Inventory SKU" fullWidth />
+              )}
+            />
+            <Controller
+              name={`variants.${index}.inventory.quantity`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Quantity"
+                  type="number"
+                  fullWidth
+                />
+              )}
+            />
+          </Box>
 
-          <Controller
-            name={`variants.${index}.price.discount`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Discount"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
+          {/* Low Threshold + Backorder */}
+          <Box display="flex" gap={2} alignItems="center" mb={2}>
+            <Controller
+              name={`variants.${index}.inventory.lowStockThreshold`}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Low Stock Threshold"
+                  type="number"
+                  fullWidth
+                />
+              )}
+            />
+            <Controller
+              name={`variants.${index}.inventory.allowBackorder`}
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={<Checkbox {...field} checked={field.value} />}
+                  label="Allow Backorders"
+                />
+              )}
+            />
+          </Box>
 
-          <Controller
-            name={`variants.${index}.price.discountType`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Discount Type"
-                select
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                <MenuItem value="flat">Flat</MenuItem>
-                <MenuItem value="percentage">Percentage</MenuItem>
-              </TextField>
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.price.finalPrice`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Final Price"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.quantity`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Quantity"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.lowStockThreshold`}
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Low Stock Threshold"
-                type="number"
-                fullWidth
-                sx={{ mb: 2 }}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value === "" ? undefined : +e.target.value
-                  )
-                }
-              />
-            )}
-          />
-
-          <Controller
-            name={`variants.${index}.inventory.allowBackorders`}
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Checkbox {...field} checked={field.value} />}
-                label="Allow Backorders"
-              />
-            )}
-          />
-
-          {/* Variant Image Upload */}
+          {/* Images */}
+          <Typography variant="subtitle2" mt={2}>
+            Images
+          </Typography>
           <Controller
             name={`variants.${index}.images`}
             control={control}
             render={({ field }) => (
               <Box mb={2}>
-                <Typography variant="subtitle2">Variant Images</Typography>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    field.onChange(files);
-                  }}
+                  onChange={(e) => field.onChange(Array.from(e.target.files || []))}
                 />
                 <Box mt={1} display="flex" gap={1} flexWrap="wrap">
                   {Array.isArray(field.value) &&
-                    field.value.length > 0 &&
                     field.value.map((img: string | File, i: number) => {
-                      const src =
-                        img instanceof File ? URL.createObjectURL(img) : img;
+                      const src = img instanceof File ? URL.createObjectURL(img) : img;
                       return (
                         <img
                           key={i}
@@ -215,6 +205,57 @@ const VariantForm: React.FC<VariantFormProps> = ({
             )}
           />
 
+          {/* Attributes */}
+          <Typography variant="subtitle2" mt={2}>
+            Attributes
+          </Typography>
+          <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
+            {variantAttributes.map((attr, attrIndex) => (
+              <Controller
+                key={attr._id}
+                name={`variants.${index}.attributes.${attrIndex}.value`}
+                control={control}
+                render={({ field }) => (
+                  <Box minWidth={250}>
+                    <input
+                      type="hidden"
+                      value={attr._id}
+                      {...control.register(
+                        `variants.${index}.attributes.${attrIndex}.attributeId`
+                      )}
+                    />
+                    {attr.inputType === "text" && (
+                      <TextField {...field} label={attr.name} fullWidth sx={{ mb: 2 }} />
+                    )}
+                    {(attr.inputType === "dropdown" ||
+                      attr.inputType === "multi-select") && (
+                      <TextField
+                        {...field}
+                        select
+                        label={attr.name}
+                        fullWidth
+                        sx={{ mb: 2 }}
+                      >
+                        {attr.options?.map((opt: string) => (
+                          <MenuItem key={opt} value={opt}>
+                            {opt}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                    {attr.inputType === "file" && (
+                      <input
+                        type="file"
+                        accept="*/*"
+                        onChange={(e) => field.onChange(e.target.files?.[0])}
+                      />
+                    )}
+                  </Box>
+                )}
+              />
+            ))}
+          </Box>
+
           <Button
             onClick={(e) => {
               e.preventDefault();
@@ -233,28 +274,26 @@ const VariantForm: React.FC<VariantFormProps> = ({
         onClick={(e) => {
           e.preventDefault();
           append({
-            sku: "SKU-" + Date.now(),
-            size: "",
-            color: "",
-            price: {
-              base: 0,
-              discount: 0,
-              discountType: "flat",
-              finalPrice: 0,
-            },
+            name: "",
+            sku: "",
+            price: 0,
+            stock: 0,
             inventory: {
+              sku: "",
               quantity: 0,
+              allowBackorder: false,
               lowStockThreshold: 5,
-              allowBackorders: false,
             },
-            stockAvailable: true,
             images: [],
-            attributes: [],
+            attributes: variantAttributes.map((attr) => ({
+              attributeId: attr._id,
+              value: "",
+            })),
           });
         }}
         startIcon={<AddIcon />}
+        variant="outlined"  
         sx={{ mb: 3 }}
-        variant="outlined"
       >
         Add Variant
       </Button>

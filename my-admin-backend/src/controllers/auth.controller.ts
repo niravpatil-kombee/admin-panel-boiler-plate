@@ -82,37 +82,37 @@ export const register = async (req: Request, res: Response) => {
       }
 };
 
-export const login = (req: Request, res: Response, next: NextFunction): Response | void => {
-    passport.authenticate("local", (err: Error | null, user: any, info: { message: string }) => {
-        if (err) {
-          return res.status(500).json({
-            message: "Error in login user",
-            error: err,
-          });
-        }
-        if (!user) {
-          return res.status(401).json({
-            message: info.message || "Login failed",
-          });
-        }
+// export const login = (req: Request, res: Response, next: NextFunction): Response | void => {
+//     passport.authenticate("local", (err: Error | null, user: any, info: { message: string }) => {
+//         if (err) {
+//           return res.status(500).json({
+//             message: "Error in login user",
+//             error: err,
+//           });
+//         }
+//         if (!user) {
+//           return res.status(401).json({
+//             message: info.message || "Login failed",
+//           });
+//         }
     
-        req.login(user, (err) => {
-          if (err) {
-            return res.status(500).json({
-              message: "Error in login user",
-              error: err,
-            });
-          }
-          return res.status(200).json({
-            message: "Login Successful!",
-            user: {
-              _id: user._id,
-              email: user.email,
-            },
-          });
-        });
-      })(req, res, next);
-};
+//         req.login(user, (err) => {
+//           if (err) {
+//             return res.status(500).json({
+//               message: "Error in login user",
+//               error: err,
+//             });
+//           }
+//           return res.status(200).json({
+//             message: "Login Successful!",
+//             user: {
+//               _id: user._id,
+//               email: user.email,
+//             },
+//           });
+//         });
+//       })(req, res, next);
+// };
 
 export const logout = (req: Request, res: Response): void => {
     req.logout((err) => {

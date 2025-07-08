@@ -6,6 +6,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import CategoryIcon from '@mui/icons-material/Category';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CollectionsIcon from '@mui/icons-material/Collections';
+import AttributesIcon from '@mui/icons-material/LocalOffer'
 
 export interface NavItem {
     title: string;
@@ -56,5 +57,11 @@ export const navConfig: NavItem[] = [
         path: '/collections',
         icon: CollectionsIcon,
         permission: 'collection:read',
+    },
+    {
+        title: 'Attributes Management',
+        path: '/attributes',
+        icon: AttributesIcon,
+        permission: 'attribute:read',
     },
 ];

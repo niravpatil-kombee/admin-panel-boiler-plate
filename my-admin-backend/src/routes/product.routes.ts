@@ -10,15 +10,10 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) => Promise.res
 router.use(isAuthenticated);
 
 // Product routes
-router.post(
-  '/',
-  uploadProductImage,
-  hasPermission('product:create'),
-  asyncHandler(productController.createProduct)
-);
+router.post('/', uploadProductImage, hasPermission('product:create'), asyncHandler(productController.createProduct));
 router.get('/', hasPermission('product:read'), asyncHandler(productController.getProducts));
 router.get('/:id', hasPermission('product:read'), asyncHandler(productController.getProductById));
-router.put('/:id', hasPermission('product:update'),uploadProductImage, asyncHandler(productController.updateProduct));
+router.put('/:id',uploadProductImage, hasPermission('product:update'),uploadProductImage, asyncHandler(productController.updateProduct));
 router.delete('/:id', hasPermission('product:delete'), asyncHandler(productController.deleteProduct));
 
 export default router;

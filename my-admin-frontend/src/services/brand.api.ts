@@ -12,7 +12,6 @@ export interface GetBrandsResponseById {
   brand: Brand; 
 }
 
-
 export const getBrandsAPI = async (): Promise<GetBrandsResponse> => {
   const { data } = await axios.get('/brands');
   return data;

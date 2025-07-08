@@ -45,51 +45,51 @@ export interface ICollection {
   products: Types.ObjectId[];
 }
 
-export interface IProductAttribute {
-  key: string;
-  value: string | number | boolean;
+export type AttributeInputType = 'text' | 'dropdown' | 'multi-select' | 'file';
+
+export interface IAttribute extends Document {
+  name: string;
+  slug: string;
+  inputType: AttributeInputType;
+  options?: string[]; // for dropdown or multi-select
+  isRequired: boolean;
+  isVariantLevel: boolean;
 }
 
-export interface IPrice {
-  currency: string;
-  base: number;
-  discount: number;
-  discountType: 'flat' | 'percentage';
-  finalPrice: number;
+export interface IAttributeValue {
+  attributeId: string; // Refers to Attribute._id
+  value: string | string[]; // Can be text or selected option(s)
+  fileUrl?: string; // Used if inputType === 'file'
 }
 
 export interface IInventory {
+  sku: string;
   quantity: number;
-  lowStockThreshold: number;
-  allowBackorders: boolean;
+  allowBackorder: boolean;
+  lowStockThreshold?: number;
 }
 
 export interface IVariant {
+  name: string;
   sku: string;
-  size: string;
-  color: string;
+  price: number;
+  stock: number;
   images: string[];
-  price: IPrice;
+  attributes: IAttributeValue[];
   inventory: IInventory;
-  stockAvailable: boolean;
-  attributes: IProductAttribute[];
 }
 
 export interface IProduct extends Document {
-  title: string;
-  description?: string;
+  name: string;
   slug: string;
-  mainImage: string;
-  category: Types.ObjectId;
-  brand: Types.ObjectId;
+  description?: string;
+  brand?: string;
+  category?: string;
+  tags?: string[];
+  isPublished: boolean;
+  productAttributes: IAttributeValue[];
   variants: IVariant[];
-  attributes: IProductAttribute[];
-  status: 'active' | 'inactive';
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
-  createdBy?: Types.ObjectId;
-  updatedBy?: Types.ObjectId;
 }
+
  
   

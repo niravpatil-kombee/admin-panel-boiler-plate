@@ -23,8 +23,6 @@ export const getCategoriesAPI = async (): Promise<GetCategoriesResponse> => {
   return data;
 };
 
-
-
 export const createCategoryAPI = async (category: Partial<Category>): Promise<Category> => {
   const { data } = await axios.post('/categories', category);
   return data;

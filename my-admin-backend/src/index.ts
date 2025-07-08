@@ -12,6 +12,7 @@ import productRoutes from "./routes/product.routes";
 import brandRoutes from "./routes/brand.routes";
 import categoryRoutes from "./routes/category.routes";
 import collectionRoute from "./routes/collection.routes";
+import attributesRoute from "./routes/attribute.routes"
 import session from "express-session";
 import path from "path";
 
@@ -97,6 +98,7 @@ app.use("/api/product", productRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/collections", collectionRoute);
+app.use("/api/attribute", attributesRoute)
 
 // Health check route
 app.get("/api/health", (req: Request, res: Response) => {

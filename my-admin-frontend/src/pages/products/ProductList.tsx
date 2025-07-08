@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -8,14 +8,14 @@ import {
   CardActions,
   IconButton,
   CircularProgress,
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useNavigate } from 'react-router-dom';
-import { getProductsAPI, deleteProductAPI } from '../../services/product.api';
-import type { Product } from '../../types/product';
-import ConfirmDialog from '../../components/ConfirmDialog';
-import PageHeader from '../../components/PageHeader';
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
+import { getProductsAPI, deleteProductAPI } from "../../services/product.api";
+import type { Product } from "../../types/product";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import PageHeader from "../../components/PageHeader";
 
 export default function ProductListPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,6 +29,8 @@ export default function ProductListPage() {
     try {
       const data = await getProductsAPI();
       setProducts(data.products);
+    } catch (err) {
+      console.error("Failed to fetch products", err);
     } finally {
       setLoading(false);
     }
@@ -46,28 +48,25 @@ export default function ProductListPage() {
 
   const handleConfirmDelete = async () => {
     if (productToDelete) {
-      await deleteProductAPI(productToDelete);
-      fetchProducts();
-      setConfirmOpen(false);
-      setProductToDelete(null);
+      try {
+        await deleteProductAPI(productToDelete);
+        fetchProducts();
+      } catch (err) {
+        console.error("Delete failed", err);
+      } finally {
+        setConfirmOpen(false);
+        setProductToDelete(null);
+      }
     }
   };
 
-  const getImageUrl = (product: Product) => {
-    // If mainImage is a non-empty string, use it
-    if (typeof product.mainImage === "string" && product.mainImage) {
-      return product.mainImage;
+  const getImageUrl = (product: Product): string => {
+    const variantImg = product.variants?.[0]?.images?.[0];
+    if (typeof variantImg === "string") {
+      return variantImg.startsWith("http")
+        ? variantImg
+        : `http://localhost:5001${variantImg}`;
     }
-    // If images is an array and has at least one image with a url, use it
-    if (Array.isArray((product as any).images) && (product as any).images.length > 0 && (product as any).images[0].url) {
-      return (product as any).images[0].url;
-    }
-    // If the first variant has images, use that
-    const mainVariant = product.variants?.[0];
-    if (mainVariant && Array.isArray(mainVariant.images) && mainVariant.images.length > 0) {
-      return mainVariant.images[0];
-    }
-    // Fallback to placeholder
     return "/placeholder.png";
   };
 
@@ -93,40 +92,41 @@ export default function ProductListPage() {
         >
           {products.map((product) => {
             const mainVariant = product.variants?.[0];
-            const basePrice = mainVariant?.price?.base ?? product.price?.base ?? 0;
-            const discount = mainVariant?.price?.discount ?? product.price?.discount ?? 0;
-            const finalPrice =
-              mainVariant?.price?.finalPrice ??
-              product.price?.finalPrice ??
-              basePrice;
-
+            let basePrice = 0, discount = 0, finalPrice = 0;
+            if (typeof mainVariant?.price === 'object' && mainVariant?.price !== null) {
+              basePrice = (mainVariant.price as any).base ?? 0;
+              discount = (mainVariant.price as any).discount ?? 0;
+              finalPrice = (mainVariant.price as any).finalPrice ?? basePrice;
+            } else if (typeof mainVariant?.price === 'number') {
+              basePrice = mainVariant.price;
+              finalPrice = mainVariant.price;
+            }
+            const stock = mainVariant?.inventory?.quantity ?? 0;
             const imageUrl = getImageUrl(product);
-            const stock =
-              mainVariant?.inventory?.quantity ??
-              product.inventory?.quantity ??
-              0;
 
             return (
               <Box
                 key={product._id}
-                width={{ xs: '100%', sm: '47%', md: '31%', lg: '23%' }}
+                width={{ xs: "100%", sm: "48%", md: "31%", lg: "23%" }}
                 minWidth={250}
                 maxWidth={300}
                 flexGrow={1}
               >
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
                   <CardMedia
                     component="img"
                     height="180"
-                    image={
-                      imageUrl.startsWith('http')
-                        ? imageUrl
-                        : `http://localhost:5001${imageUrl}`
-                    }
-                    alt={product.title}
+                    image={imageUrl}
+                    alt={product.name}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6">{product.title}</Typography>
+                    <Typography variant="h6">{product.name}</Typography>
 
                     <Typography variant="body2" color="text.secondary">
                       Final Price: ₹{finalPrice}
@@ -142,6 +142,7 @@ export default function ProductListPage() {
                       Stock: {stock}
                     </Typography>
                   </CardContent>
+
                   <CardActions>
                     <IconButton onClick={() => handleEdit(product._id!)}>
                       <EditIcon />

@@ -4,6 +4,7 @@ import connectDB from '../config/database';
 import Permission from '../models/Permission';
 import Role from '../models/Role';
 import User from '../models/User';
+import bcrypt from 'bcryptjs';
 
 dotenv.config({ path: '.env' });
 
@@ -54,9 +55,6 @@ const seedDatabase = async () => {
             // Pricing Management
             { name: 'pricing:update', description: 'Update product pricing' },
           
-            // Attribute Management
-            { name: 'attribute:manage', description: 'Manage product attributes' },
-          
             // Category Management
             { name: 'category:create', description: 'Create a new category' },
             { name: 'category:read', description: 'Read category data' },
@@ -74,6 +72,12 @@ const seedDatabase = async () => {
             { name: 'collection:read', description: 'Read collection data' },
             { name: 'collection:update', description: 'Update a collection' },
             { name: 'collection:delete', description: 'Delete a collection' },
+
+             // Attributes Management
+             { name: 'attribute:create', description: 'Create a new attribute' },
+             { name: 'attribute:read', description: 'Read attribute data' },
+             { name: 'attribute:update', description: 'Update a attribute' },
+             { name: 'attribute:delete', description: 'Delete a attribute' },
           ];
           
 
@@ -103,10 +107,11 @@ const seedDatabase = async () => {
         console.log('Viewer role seeded.');
 
         // --- Create Super Admin User ---
+        const hashedPassword = await bcrypt.hash('password123', 10);
         const superAdminUser = new User({
             name: 'Super Admin',
             email: 'admin@example.com',
-            password: 'password123', // This will be hashed by the pre-save hook
+            password: hashedPassword, // This will be hashed by the pre-save hook
             role: superAdminRole._id,
             isEmailVerified: true,
         });

@@ -15,6 +15,8 @@ import BrandListPage from '../pages/brands/BrandList';
 import BrandFormPage from '../pages/brands/BrandForm';
 import CollectionListPage from '../pages/collection/CollectionList';
 import CollectionFormPage from '../pages/collection/CollectionForm';
+import AttributeForm from '../pages/attributes/AttributesForm';
+import AttributesList from '../pages/attributes/AttributesList';
 
 export default function AppRouter() {
     const routes = useRoutes([
@@ -54,6 +56,9 @@ export default function AppRouter() {
                 { path: 'brands/edit/:id', element: <BrandFormPage /> },
                 { path: 'collections/new', element: <CollectionFormPage /> },
                 { path: 'collections/edit/:id', element: <CollectionFormPage /> },
+                { path: 'attributes', element: <AttributesList /> },
+                { path: 'attributes/new', element: <AttributeForm /> },
+                { path: 'attributes/edit/:id', element: <AttributeForm /> },
             ]
         },
         { path: '*', element: <Navigate to="/" replace /> },

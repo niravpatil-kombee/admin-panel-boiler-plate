@@ -22,7 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import VariantForm from "./VariantForm";
 
 const productSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
   category: z.string().min(1, "Category is required"),
   brand: z.string().min(1, "Brand is required"),
@@ -33,10 +33,10 @@ const productSchema = z.object({
   variants: z
     .array(
       z.object({
-        sku: z.string().min(1, "SKU is required"),
+        sku: z.string(),
         size: z.string(),
         color: z.string(),
-        images: z.array(z.union([z.string(), z.instanceof(File)])),
+        images: z.array(z.union([z.string(), z.instanceof(File)])).optional(),
         price: z.object({
           base: z.number(),
           discount: z.number(),
@@ -64,13 +64,11 @@ export default function ProductFormPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<ProductFormSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      title: "",
+      name: "",
       slug: "",
       description: "",
       category: "",
@@ -102,7 +100,7 @@ export default function ProductFormPage() {
   useEffect(() => {
     getCategoriesAPI().then((data) => setCategories(data.categories));
     getBrandsAPI().then((data) => setBrands(data.brands));
-  
+
     if (isEdit && id) {
       setLoading(true);
       getProductByIdAPI(id)
@@ -110,7 +108,6 @@ export default function ProductFormPage() {
           if (!product) throw new Error("Product not found");
           reset({
             ...product,
-            attributes: product.attributes ?? [],
             variants: (product.variants ?? []).map((v: any) => ({
               sku: v.sku,
               size: v.size ?? "",
@@ -140,13 +137,12 @@ export default function ProductFormPage() {
         .finally(() => setLoading(false));
     }
   }, [id, isEdit, reset]);
-  
 
   const onSubmit = async (data: ProductFormSchema) => {
     try {
       const formData = new FormData();
 
-      formData.append("title", data.title);
+      formData.append("name", data.name);
       formData.append("slug", data.slug);
       formData.append("category", data.category);
       formData.append("brand", data.brand ?? "");
@@ -163,15 +159,13 @@ export default function ProductFormPage() {
 
           return {
             ...variant,
-            images: variant.images.map(
-              (_, fileIndex) => `variantImages_${idx}_${fileIndex}`
+            images: (variant.images ?? []).map(
+              (_: any, fileIndex: number) => `variantImages_${idx}_${fileIndex}`
             ),
           };
         }) ?? [];
 
       formData.append("variants", JSON.stringify(variantPayload));
-
-      if (imageFile) formData.append("mainImage", imageFile);
 
       if (isEdit && id) await updateProductAPI(id, formData);
       else await createProductAPI(formData);
@@ -201,73 +195,79 @@ export default function ProductFormPage() {
       <Typography variant="h4" gutterBottom>
         {isEdit ? "Edit Product" : "Create Product"}
       </Typography>
+      <Box display="flex" gap={2} mb={2}>
+        <Controller
+          name="name"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Name"
+              fullWidth
+              error={!!form.formState.errors.name}
+              helperText={form.formState.errors.name?.message}
+            />
+          )}
+        />
 
-      <Controller
-        name="title"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label="Title"
-            fullWidth
-            sx={{ mb: 2 }}
-            error={!!form.formState.errors.title}
-            helperText={form.formState.errors.title?.message}
-          />
-        )}
-      />
+        <Controller
+          name="slug"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Slug"
+              fullWidth
+              error={!!form.formState.errors.slug}
+              helperText={form.formState.errors.slug?.message}
+            />
+          )}
+        />
+      </Box>
 
-      <Controller
-        name="slug"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} label="Slug" fullWidth sx={{ mb: 2 }} />
-        )}
-      />
+      <Box display="flex" gap={2} mb={2}>
+        <Controller
+          name="category"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Category"
+              select
+              fullWidth
+              error={!!form.formState.errors.category}
+              helperText={form.formState.errors.category?.message}
+            >
+              {categories.map((cat) => (
+                <MenuItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
 
-      <Controller
-        name="category"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label="Category"
-            select
-            fullWidth
-            sx={{ mb: 2 }}
-            error={!!form.formState.errors.category}
-            helperText={form.formState.errors.category?.message}
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat._id} value={cat._id}>
-                {cat.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      />
-
-      <Controller
-        name="brand"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label="Brand"
-            select
-            fullWidth
-            sx={{ mb: 2 }}
-            error={!!form.formState.errors.brand}
-            helperText={form.formState.errors.brand?.message}
-          >
-            {brands.map((brand) => (
-              <MenuItem key={brand._id} value={brand._id}>
-                {brand.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      />
+        <Controller
+          name="brand"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Brand"
+              select
+              fullWidth
+              error={!!form.formState.errors.brand}
+              helperText={form.formState.errors.brand?.message}
+            >
+              {brands.map((brand) => (
+                <MenuItem key={brand._id} value={brand._id}>
+                  {brand.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
+      </Box>
 
       <Controller
         name="description"
@@ -323,36 +323,6 @@ export default function ProductFormPage() {
         Add Attribute
       </Button>
 
-      {/* Main Image Upload */}
-      <Box mt={3} mb={2}>
-        <Typography variant="subtitle1">Main Image</Typography>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0] || null;
-            setImageFile(file);
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (ev) =>
-                setImagePreview(ev.target?.result as string);
-              reader.readAsDataURL(file);
-            } else {
-              setImagePreview(null);
-            }
-          }}
-        />
-        {imagePreview && (
-          <Box mt={1}>
-            <img
-              src={imagePreview}
-              alt="Preview"
-              style={{ maxWidth: 200, maxHeight: 200 }}
-            />
-          </Box>
-        )}
-      </Box>
-
       {/* Variants Section */}
       <Typography variant="h6" mt={4} mb={2}>
         Variants
@@ -365,7 +335,7 @@ export default function ProductFormPage() {
         remove={removeVariant}
         control={control}
         errors={form.formState.errors}
-        isEdit={isEdit}
+        variantAttributes={[]}
       />
 
       <Button

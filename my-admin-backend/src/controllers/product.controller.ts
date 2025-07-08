@@ -1,238 +1,172 @@
-import { Request, Response } from "express";
-import Product from "../models/Product";
-import fs from "fs";
-import slugify from "slugify";
-import { isValidObjectId } from "mongoose";
+import { Request, Response } from 'express';
+import Product from '../models/Product';
+import { isValidObjectId } from 'mongoose';
+import { uploadProductImage } from '../middlewares/upload.middleware';
 
-const parseJsonString = (value: any) => {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
+// Map uploaded files to fieldname -> path
+const extractFilesMap = (files: Express.Multer.File[]) => {
+  return files.reduce((acc, file) => {
+    acc[file.fieldname] = file.path;
+    return acc;
+  }, {} as Record<string, string>);
 };
 
-const computeStockAvailable = (quantity: number): boolean => quantity > 0;
+const parseJson = (field: string | undefined) => {
+  try {
+    return field ? JSON.parse(field) : [];
+  } catch {
+    return [];
+  }
+};
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const productData = { ...req.body };
+    const filesMap = extractFilesMap(req.files as Express.Multer.File[]);
 
-    if (!productData.title) {
-      return res.status(400).json({ message: "Product title is required" });
-    }
+    const {
+      name,
+      slug,
+      description,
+      brand,
+      category,
+      tags,
+      isPublished,
+      productAttributes,
+      variants,
+    } = req.body;
 
-    if (!productData.slug) {
-      productData.slug = slugify(productData.title, {
-        lower: true,
-        strict: true,
-      });
-    }
+    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => ({
+      attributeId: attr.attributeId,
+      value: attr.value,
+      fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
+    }));
 
-    const fieldsToParse = [
-      "price",
-      "inventory",
-      "attributes",
-      "tags",
-      "variants",
-    ];
-    fieldsToParse.forEach((field) => {
-      if (typeof productData[field] === "string") {
-        productData[field] = parseJsonString(productData[field]);
-      }
+    const parsedVariants = parseJson(variants).map((variant: any, idx: number) => ({
+      name: variant.name,
+      sku: variant.sku,
+      price: variant.price,
+      stock: variant.stock,
+      images: (variant.imageKeys || [])
+        .map((key: string) => filesMap[key])
+        .filter(Boolean),
+      inventory: variant.inventory,
+      attributes: variant.attributes.map((attr: any) => ({
+        attributeId: attr.attributeId,
+        value: attr.value,
+        fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
+      })),
+    }));
+
+    const product = await Product.create({
+      name,
+      slug,
+      description,
+      brand,
+      category,
+      tags: parseJson(tags),
+      isPublished: isPublished === 'true',
+      productAttributes: parsedProductAttributes,
+      variants: parsedVariants,
     });
 
-    const files = req.files as Express.Multer.File[];
-
-    // Handle main image
-    const mainImageFile = files?.find((f) => f.fieldname === "mainImage");
-    if (mainImageFile) {
-      productData.mainImage = `/uploads/products/${mainImageFile.filename}`;
-    } else {
-      return res.status(400).json({ message: "Main image is required." });
-    }
-
-    // Handle variants and resolve image field references
-    if (Array.isArray(productData.variants)) {
-      productData.variants = productData.variants.map(
-        (variant: any, index: number) => {
-          if (typeof variant.price === "string")
-            variant.price = parseJsonString(variant.price);
-          if (typeof variant.inventory === "string")
-            variant.inventory = parseJsonString(variant.inventory);
-          if (typeof variant.attributes === "string")
-            variant.attributes = parseJsonString(variant.attributes);
-
-          if (Array.isArray(variant.images)) {
-            variant.images = variant.images
-              .map((fieldName: string) => {
-                const file = files?.find((f) => f.fieldname === fieldName);
-                return file ? `/uploads/products/${file.filename}` : null;
-              })
-              .filter((v: string | null) => v !== null);
-          }
-
-          variant.stockAvailable = computeStockAvailable(
-            variant.inventory?.quantity || 0
-          );
-          return variant;
-        }
-      );
-    }
-
-    const product = new Product(productData);
-    await product.save();
-
-    res.status(201).json({ message: "Product added successfully", product });
-  } catch (err: any) {
-    console.error("Error creating product:", err);
-    if (err.name === "ValidationError") {
-      return res
-        .status(400)
-        .json({ message: "Validation Error", errors: err.errors });
-    }
-    res
-      .status(500)
-      .json({ message: "Error while creating product", error: err.message });
+    res.status(201).json({ message: 'Product created', product });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error creating product', error: error.message });
   }
 };
 
-export const getProducts = async (req: Request, res: Response) => {
+export const getProducts = async (_req: Request, res: Response) => {
   try {
-    const products = await Product.find().exec();
-    res
-      .status(200)
-      .json({
-        message: "Products fetched!",
-        totalProducts: products.length,
-        products,
-      });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error in fetch products",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    const products = await Product.find().populate('brand category variants.attributes.attributeId productAttributes.attributeId');
+    res.status(200).json({ message: 'Products fetched', total: products.length, products });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching products', error: error.message });
   }
 };
 
 export const getProductById = async (req: Request, res: Response) => {
-  const productId: string = req.params.id;
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID' });
+
   try {
-    if (!isValidObjectId(productId)) {
-      return res
-        .status(400)
-        .json({ message: "productId is not valid", Id: productId });
-    }
-    const product = await Product.findById(productId).exec();
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    res.status(200).json({ message: "Product fetched!", product });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error in fetch product",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    const product = await Product.findById(id).populate('brand category variants.attributes.attributeId productAttributes.attributeId');
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ message: 'Product fetched', product });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching product', error: error.message });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
-  console.log("req.body:", req.body);
-  console.log("req.files:", req.files);
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID' });
 
-  const productId = req.params.id;
   try {
-    if (!isValidObjectId(productId)) {
-      return res
-        .status(400)
-        .json({ message: "productId is not valid", Id: productId });
-    }
+    const filesMap = extractFilesMap(req.files as Express.Multer.File[]);
+    const {
+      name,
+      slug,
+      description,
+      brand,
+      category,
+      tags,
+      isPublished,
+      productAttributes,
+      variants,
+    } = req.body;
 
-    const updateData = { ...req.body };
-    const fieldsToParse = ["tags", "attributes", "variants"];
-    fieldsToParse.forEach((field) => {
-      if (typeof updateData[field] === "string") {
-        updateData[field] = parseJsonString(updateData[field]);
-      }
-    });
+    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => ({
+      attributeId: attr.attributeId,
+      value: attr.value,
+      fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
+    }));
 
-    const files = req.files as Express.Multer.File[];
+    const parsedVariants = parseJson(variants).map((variant: any) => ({
+      name: variant.name,
+      sku: variant.sku,
+      price: variant.price,
+      stock: variant.stock,
+      images: (variant.imageKeys || []).map((key: string) => filesMap[key]).filter(Boolean),
+      inventory: variant.inventory,
+      attributes: variant.attributes.map((attr: any) => ({
+        attributeId: attr.attributeId,
+        value: attr.value,
+        fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
+      })),
+    }));
 
-    // Handle main image
-    const mainImageFile = files?.find((f) => f.fieldname === "mainImage");
-    if (mainImageFile) {
-      updateData.mainImage = `/uploads/products/${mainImageFile.filename}`;
-    }
+    const updated = await Product.findByIdAndUpdate(
+      id,
+      {
+        name,
+        slug,
+        description,
+        brand,
+        category,
+        tags: parseJson(tags),
+        isPublished: isPublished === 'true',
+        productAttributes: parsedProductAttributes,
+        variants: parsedVariants,
+      },
+      { new: true }
+    );
 
-    // Handle variant images
-    if (Array.isArray(updateData.variants)) {
-      updateData.variants = updateData.variants.map(
-        (variant: any, index: number) => {
-          if (typeof variant.price === "string")
-            variant.price = parseJsonString(variant.price);
-          if (typeof variant.inventory === "string")
-            variant.inventory = parseJsonString(variant.inventory);
-          if (typeof variant.attributes === "string")
-            variant.attributes = parseJsonString(variant.attributes);
-
-          if (Array.isArray(variant.images)) {
-            variant.images = variant.images
-              .map((fieldName: string) => {
-                const file = files?.find((f) => f.fieldname === fieldName);
-                return file ? `/uploads/products/${file.filename}` : null;
-              })
-              .filter((v: string | null) => v !== null);
-          }
-
-          variant.stockAvailable = computeStockAvailable(
-            variant.inventory?.quantity || 0
-          );
-          return variant;
-        }
-      );
-    }
-
-    console.log("Update data:", updateData);
-
-    const product = await Product.findByIdAndUpdate(productId, updateData, {
-      new: true,
-    }).exec();
-    if (!product) return res.status(404).json({ message: "Product not found" });
-
-    return res.json({ message: "Product updated successfully", product });
+    if (!updated) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ message: 'Product updated', product: updated });
   } catch (error: any) {
-    return res
-      .status(500)
-      .json({ message: error.message || "An error occurred" });
+    res.status(500).json({ message: 'Error updating product', error: error.message });
   }
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
-  const productId: string = req.params.id;
-
-  if (!isValidObjectId(productId)) {
-    return res
-      .status(400)
-      .json({ message: "productId is not valid", Id: productId });
-  }
+  const { id } = req.params;
+  if (!isValidObjectId(id)) return res.status(400).json({ message: 'Invalid product ID' });
 
   try {
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res
-        .status(404)
-        .json({ message: "Product not found", Id: productId });
-    }
-
-    if (product.mainImage) {
-      const filePath = `.${product.mainImage}`;
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
-
-    await Product.findByIdAndDelete(productId);
-    res.status(200).json({ message: "Product deleted successfully", product });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error in delete Product",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    const deleted = await Product.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ message: 'Product not found' });
+    res.status(200).json({ message: 'Product deleted', product: deleted });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error deleting product', error: error.message });
   }
 };
