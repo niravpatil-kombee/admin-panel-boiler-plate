@@ -54,7 +54,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
 }) => {
   return (
     <>
-      {console.log('variantAttributes', variantAttributes)}
+      {/* {console.log('variantAttributes', variantAttributes)} */}
       {fields.map((variant, index) => (
         <Box
           key={variant.id || index}
@@ -90,14 +90,28 @@ const VariantForm: React.FC<VariantFormProps> = ({
               name={`variants.${index}.price`}
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Price" type="number" fullWidth />
+                <TextField
+                  {...field}
+                  label="Price"
+                  type="number"
+                  fullWidth
+                  value={field.value ?? ""}
+                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                />
               )}
             />
             <Controller
               name={`variants.${index}.stock`}
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Stock" type="number" fullWidth />
+                <TextField
+                  {...field}
+                  label="Stock"
+                  type="number"
+                  fullWidth
+                  value={field.value ?? ""}
+                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                />
               )}
             />
           </Box>
@@ -118,7 +132,14 @@ const VariantForm: React.FC<VariantFormProps> = ({
               name={`variants.${index}.inventory.quantity`}
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="Quantity" type="number" fullWidth />
+                <TextField
+                  {...field}
+                  label="Quantity"
+                  type="number"
+                  fullWidth
+                  value={field.value ?? ""}
+                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                />
               )}
             />
           </Box>
@@ -133,6 +154,8 @@ const VariantForm: React.FC<VariantFormProps> = ({
                   label="Low Stock Threshold"
                   type="number"
                   fullWidth
+                  value={field.value ?? ""}
+                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                 />
               )}
             />
@@ -141,7 +164,13 @@ const VariantForm: React.FC<VariantFormProps> = ({
               control={control}
               render={({ field }) => (
                 <FormControlLabel
-                  control={<Checkbox {...field} checked={field.value} />}
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={!!field.value}
+                      onChange={e => field.onChange(e.target.checked)}
+                    />
+                  }
                   label="Allow Backorders"
                 />
               )}
@@ -190,73 +219,76 @@ const VariantForm: React.FC<VariantFormProps> = ({
             Attributes
           </Typography>
 
-          <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
-            {variantAttributes.map((attr, attrIndex) => (
-              <Box key={attr._id} minWidth={250}>
-                {/* Register attributeId using Controller */}
-                <Controller
-                  name={`variants.${index}.attributes.${attrIndex}.attributeId`}
-                  control={control}
-                  defaultValue={attr._id}
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <Controller
-                  name={`variants.${index}.attributes.${attrIndex}.value`}
-                  control={control}
-                  render={({ field }) => {
-                    if (attr.inputType === "text") {
-                      return (
-                        <TextField
-                          {...field}
-                          label={attr.name}
-                          fullWidth
-                          sx={{ mb: 2 }}
-                        />
-                      );
-                    }
-
-                    if (attr.inputType === "dropdown" || attr.inputType === "multi-select") {
-                      return (
-                        <TextField
-                          {...field}
-                          select
-                          label={attr.name}
-                          fullWidth
-                          sx={{ mb: 2 }}
-                        >
-                          {attr.options?.map((opt: string) => (
-                            <MenuItem key={opt} value={opt}>
-                              {opt}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      );
-                    }
-
-                    if (attr.inputType === "file") {
-                      return (
-                        <Box mb={2}>
-                          <Typography fontSize={13} fontWeight={500} mb={0.5}>
-                            {attr.name}
-                          </Typography>
-                          <input
-                            type="file"
-                            accept="*/*"
-                            onChange={(e) => field.onChange(e.target.files?.[0])}
-                          />
-                        </Box>
-                      );
-                    }
-
-                    // Fallback for missing or unknown inputType
-                    return (
-                      <Typography color="error" fontSize={12}>
-                        Unknown or missing inputType for attribute: {attr.name}
-                      </Typography>
-                    );
-                  }}
-                />
+          <Box mb={2}>
+            {Array.from({ length: Math.ceil(variantAttributes.length / 2) }).map((_, rowIdx) => (
+              <Box key={rowIdx} display="flex" gap={2} mb={2}>
+                {variantAttributes.slice(rowIdx * 2, rowIdx * 2 + 2).map((attr, attrIndex) => {
+                  const globalAttrIndex = rowIdx * 2 + attrIndex;
+                  return (
+                    <Box key={attr._id} minWidth={250} flex={1}>
+                      {/* Register attributeId using Controller */}
+                      <Controller
+                        name={`variants.${index}.attributes.${globalAttrIndex}.attributeId`}
+                        control={control}
+                        defaultValue={attr._id}
+                        render={({ field }) => <input type="hidden" {...field} />}
+                      />
+                      <Controller
+                        name={`variants.${index}.attributes.${globalAttrIndex}.value`}
+                        control={control}
+                        render={({ field }) => {
+                          if (attr.inputType === "text") {
+                            return (
+                              <TextField
+                                {...field}
+                                label={attr.name}
+                                fullWidth
+                                sx={{ mb: 2 }}
+                              />
+                            );
+                          }
+                          if (attr.inputType === "dropdown" || attr.inputType === "multi-select") {
+                            return (
+                              <TextField
+                                {...field}
+                                select
+                                label={attr.name}
+                                fullWidth
+                                sx={{ mb: 2 }}
+                              >
+                                {attr.options?.map((opt: string) => (
+                                  <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            );
+                          }
+                          if (attr.inputType === "file") {
+                            return (
+                              <Box mb={2}>
+                                <Typography fontSize={13} fontWeight={500} mb={0.5}>
+                                  {attr.name}
+                                </Typography>
+                                <input
+                                  type="file"
+                                  accept="*/*"
+                                  onChange={(e) => field.onChange(e.target.files?.[0])}
+                                />
+                              </Box>
+                            );
+                          }
+                          // Fallback for missing or unknown inputType
+                          return (
+                            <Typography color="error" fontSize={12}>
+                              Unknown or missing inputType for attribute: {attr.name}
+                            </Typography>
+                          );
+                        }}
+                      />
+                    </Box>
+                  );
+                })}
               </Box>
             ))}
           </Box>
@@ -283,17 +315,17 @@ const VariantForm: React.FC<VariantFormProps> = ({
             sku: "",
             price: 0,
             stock: 0,
+            images: [],
+            attributes: variantAttributes.map((attr) => ({
+              attributeId: attr._id,
+              value: "",
+            })),
             inventory: {
               sku: "",
               quantity: 0,
               allowBackorder: false,
               lowStockThreshold: 5,
             },
-            images: [],
-            attributes: variantAttributes.map((attr) => ({
-              attributeId: attr._id,
-              value: "",
-            })),
           });
         }}
         startIcon={<AddIcon />}

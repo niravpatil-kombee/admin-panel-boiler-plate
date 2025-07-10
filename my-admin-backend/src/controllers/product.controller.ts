@@ -35,26 +35,40 @@ export const createProduct = async (req: Request, res: Response) => {
       variants,
     } = req.body;
 
-    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => ({
-      attributeId: attr.attributeId,
-      value: attr.value,
-      fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
-    }));
+    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => {
+      let value = attr.value;
+      let fileUrl = undefined;
+      if (attr.inputType === 'file' && attr.fileKey && filesMap[attr.fileKey]) {
+        value = filesMap[attr.fileKey];
+        fileUrl = filesMap[attr.fileKey];
+      }
+      return {
+        attributeId: attr.attributeId || undefined,
+        value,
+        fileUrl,
+      };
+    });
 
     const parsedVariants = parseJson(variants).map((variant: any, idx: number) => ({
       name: variant.name,
       sku: variant.sku,
       price: variant.price,
       stock: variant.stock,
-      images: (variant.imageKeys || [])
-        .map((key: string) => filesMap[key])
-        .filter(Boolean),
+      images: (variant.images || []).map((key: string) => filesMap[key] || key).filter(Boolean),
       inventory: variant.inventory,
-      attributes: variant.attributes.map((attr: any) => ({
-        attributeId: attr.attributeId,
-        value: attr.value,
-        fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
-      })),
+      attributes: (variant.attributes || []).map((attr: any) => {
+        let value = attr.value;
+        let fileUrl = undefined;
+        if (attr.inputType === 'file' && attr.fileKey && filesMap[attr.fileKey]) {
+          value = filesMap[attr.fileKey];
+          fileUrl = filesMap[attr.fileKey];
+        }
+        return {
+          attributeId: attr.attributeId || undefined,
+          value,
+          fileUrl,
+        };
+      }),
     }));
 
     const product = await Product.create({
@@ -115,11 +129,19 @@ export const updateProduct = async (req: Request, res: Response) => {
       variants,
     } = req.body;
 
-    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => ({
-      attributeId: attr.attributeId,
-      value: attr.value,
-      fileUrl: attr.inputType === 'file' && attr.fileKey ? filesMap[attr.fileKey] : undefined,
-    }));
+    const parsedProductAttributes = parseJson(productAttributes).map((attr: any) => {
+      let value = attr.value;
+      let fileUrl = undefined;
+      if (attr.inputType === 'file' && attr.fileKey && filesMap[attr.fileKey]) {
+        value = filesMap[attr.fileKey];
+        fileUrl = filesMap[attr.fileKey];
+      }
+      return {
+        attributeId: attr.attributeId || undefined,
+        value,
+        fileUrl,
+      };
+    });
 
     const parsedVariants = parseJson(variants).map((variant: any) => ({
       name: variant.name,
@@ -157,6 +179,8 @@ export const updateProduct = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error updating product', error: error.message });
   }
 };
+
+
 
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;

@@ -61,14 +61,39 @@ export default function ProductListPage() {
   };
 
   const getImageUrl = (product: Product): string => {
+    // Type guard for attributeId
+    const isAttrIdObj = (id: any): id is { name: string } => id && typeof id === 'object' && 'name' in id && typeof id.name === 'string';
+    // Try to find a product-level attribute specifically named "Product Image"
+    const imageAttr = product.productAttributes?.find((attr) => {
+      return (
+        typeof attr.value === "string" &&
+        (attr.value.endsWith(".jpg") ||
+          attr.value.endsWith(".jpeg") ||
+          attr.value.endsWith(".png") ||
+          attr.value.endsWith(".webp")) &&
+        isAttrIdObj(attr.attributeId) &&
+        attr.attributeId.name.toLowerCase().includes("product image")
+      );
+    });
+  
+    if (imageAttr) {
+      return imageAttr.value.startsWith("http")
+        ? imageAttr.value
+        : `http://localhost:5001/${imageAttr.value.replace(/\\/g, "/")}`;
+    }
+  
+    // Fallback to variant image
     const variantImg = product.variants?.[0]?.images?.[0];
     if (typeof variantImg === "string") {
       return variantImg.startsWith("http")
         ? variantImg
-        : `http://localhost:5001${variantImg}`;
+        : `http://localhost:5001/${variantImg.replace(/\\/g, "/")}`;
     }
+  
+    // Final fallback
     return "/placeholder.png";
   };
+  
 
   return (
     <Box>
@@ -92,16 +117,11 @@ export default function ProductListPage() {
         >
           {products.map((product) => {
             const mainVariant = product.variants?.[0];
-            let basePrice = 0, discount = 0, finalPrice = 0;
-            if (typeof mainVariant?.price === 'object' && mainVariant?.price !== null) {
-              basePrice = (mainVariant.price as any).base ?? 0;
-              discount = (mainVariant.price as any).discount ?? 0;
-              finalPrice = (mainVariant.price as any).finalPrice ?? basePrice;
-            } else if (typeof mainVariant?.price === 'number') {
-              basePrice = mainVariant.price;
-              finalPrice = mainVariant.price;
+            let price = 0;
+            if (typeof mainVariant?.price === 'number') {
+              price = mainVariant.price;
             }
-            const stock = mainVariant?.inventory?.quantity ?? 0;
+            const stock = mainVariant?.stock ?? mainVariant?.inventory?.quantity ?? 0;
             const imageUrl = getImageUrl(product);
 
             return (
@@ -129,18 +149,36 @@ export default function ProductListPage() {
                     <Typography variant="h6">{product.name}</Typography>
 
                     <Typography variant="body2" color="text.secondary">
-                      Final Price: ₹{finalPrice}
+                      Price: ₹{price}
                     </Typography>
-
-                    {discount > 0 && (
-                      <Typography variant="body2" color="text.secondary">
-                        Base: ₹{basePrice}, Discount: ₹{discount}
-                      </Typography>
-                    )}
 
                     <Typography variant="body2" color="text.secondary">
                       Stock: {stock}
                     </Typography>
+
+                    {/* Show product-level attributes */}
+                    {/* {product.productAttributes?.length > 0 && (
+                      <Box mt={1}>
+                        <Typography variant="subtitle2" fontSize={13} mb={0.5}>
+                          Attributes:
+                        </Typography>
+                        {product.productAttributes.map((attr, idx) => {    
+                          // Type guard for attributeId
+                          const getAttrName = (attributeId: any) => {
+                            if (attributeId && typeof attributeId === 'object' && 'name' in attributeId) {
+                              return attributeId.name;
+                            }
+                            return String(attributeId);
+                          };
+                          if (typeof attr.value === 'object') return null;
+                          return (
+                            <Typography key={idx} variant="body2" color="text.secondary">
+                              {getAttrName(attr.attributeId)}: {String(attr.value)}
+                            </Typography>
+                          );
+                        })}
+                      </Box>
+                    )} */}
                   </CardContent>
 
                   <CardActions>
