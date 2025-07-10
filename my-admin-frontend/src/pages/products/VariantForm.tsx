@@ -1,8 +1,6 @@
 import {
   Box,
   Button,
-  Checkbox,
-  FormControlLabel,
   MenuItem,
   TextField,
   Typography,
@@ -21,6 +19,7 @@ interface VariantFormProps {
   control: Control<any>;
   errors: FieldErrors<any>;
   variantAttributes: Attribute[];
+  inventories: { _id: string; sku: string }[]; 
 }
 
 export const attributeValueSchema = z.object({
@@ -41,7 +40,7 @@ export const variantSchema = z.object({
   price: z.coerce.number().nonnegative(),
   stock: z.coerce.number().nonnegative(),
   images: z.any().optional(),
-  inventory: inventorySchema,
+  inventory: z.string().min(1),
   attributes: z.array(attributeValueSchema),
 });
 
@@ -51,6 +50,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
   remove,
   control,
   variantAttributes,
+  inventories,
 }) => {
   return (
     <>
@@ -116,63 +116,24 @@ const VariantForm: React.FC<VariantFormProps> = ({
             />
           </Box>
 
-          <Typography variant="subtitle2" mt={2} mb={1}>
-            Inventory
-          </Typography>
-
+          {/* Replace Inventory fields with Inventory reference select */}
           <Box display="flex" gap={2} mb={2}>
             <Controller
-              name={`variants.${index}.inventory.sku`}
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Inventory SKU" fullWidth />
-              )}
-            />
-            <Controller
-              name={`variants.${index}.inventory.quantity`}
+              name={`variants.${index}.inventory`}
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Quantity"
-                  type="number"
+                  select
+                  label="Inventory Reference"
                   fullWidth
-                  value={field.value ?? ""}
-                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
-                />
-              )}
-            />
-          </Box>
-
-          <Box display="flex" gap={2} alignItems="center" mb={2}>
-            <Controller
-              name={`variants.${index}.inventory.lowStockThreshold`}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Low Stock Threshold"
-                  type="number"
-                  fullWidth
-                  value={field.value ?? ""}
-                  onChange={e => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
-                />
-              )}
-            />
-            <Controller
-              name={`variants.${index}.inventory.allowBackorder`}
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      {...field}
-                      checked={!!field.value}
-                      onChange={e => field.onChange(e.target.checked)}
-                    />
-                  }
-                  label="Allow Backorders"
-                />
+                  value={field.value ?? ''}
+                >
+                  <MenuItem value="" disabled>Select Inventory</MenuItem>
+                  {inventories.map(inv => (
+                    <MenuItem key={inv._id} value={inv._id}>{inv.sku}</MenuItem>
+                  ))}
+                </TextField>
               )}
             />
           </Box>
@@ -214,8 +175,7 @@ const VariantForm: React.FC<VariantFormProps> = ({
               </Box>
             )}
           />
-
-          <Typography variant="subtitle2" mt={2}>
+          <Typography variant="subtitle2" mt={2} mb={1}>
             Attributes
           </Typography>
 

@@ -7,6 +7,8 @@ import CategoryIcon from '@mui/icons-material/Category';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import AttributesIcon from '@mui/icons-material/LocalOffer'
+import WarehouseIcon from '@mui/icons-material/Warehouse';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 
 export interface NavItem {
     title: string;
@@ -63,5 +65,17 @@ export const navConfig: NavItem[] = [
         path: '/attributes',
         icon: AttributesIcon,
         permission: 'attribute:read',
+    },
+    {
+        title: 'WareHouse Management',
+        path: '/warehouses',
+        icon: WarehouseIcon,
+        permission: 'warehouse:read',
+    },
+    {
+        title: 'Inventory Management',
+        path: '/inventory',
+        icon: Inventory2Icon,
+        permission: 'inventory:read',
     },
 ];

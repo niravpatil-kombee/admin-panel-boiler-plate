@@ -47,14 +47,19 @@ export default function CategoryFormPage() {
     handleSubmit,
     reset,
     formState: { isSubmitting },
+    watch,
+    setValue,
   } = form;
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const nameValue = watch('name');
+  const slugValue = watch('slug');
 
   useEffect(() => {
     // Fetch all categories
     getCategoriesAPI()
       .then((data) => setCategories(data.categories))
       .catch((err) => console.error("Failed to fetch categories:", err));
-  
+
     if (id) {
       setLoading(true);
       getCategoryByIdAPI(id)
@@ -72,6 +77,18 @@ export default function CategoryFormPage() {
         .finally(() => setLoading(false));
     }
   }, [id, isEdit, reset]);
+
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      const generatedSlug = nameValue
+        ? nameValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+        : '';
+      setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  }, [nameValue, slugManuallyEdited, setValue]);
   
 
   const onSubmit = async (data: Category) => {
@@ -115,6 +132,10 @@ export default function CategoryFormPage() {
             label="Category Name"
             fullWidth
             sx={{ mb: 2 }}
+            onChange={e => {
+              field.onChange(e);
+              setSlugManuallyEdited(false);
+            }}
           />
         )}
       />
@@ -124,7 +145,16 @@ export default function CategoryFormPage() {
         name="slug"
         control={control}
         render={({ field }) => (
-          <TextField {...field} label="Slug" fullWidth sx={{ mb: 2 }} />
+          <TextField
+            {...field}
+            label="Slug"
+            fullWidth
+            sx={{ mb: 2 }}
+            onChange={e => {
+              field.onChange(e);
+              setSlugManuallyEdited(true);
+            }}
+          />
         )}
       />
 

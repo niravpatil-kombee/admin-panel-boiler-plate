@@ -44,10 +44,35 @@ export interface AttributeValue {
 }
 
 export interface Inventory {
+  _id?: string;
   sku: string;
   quantity: number;
+  allowBackorder: boolean;
   lowStockThreshold?: number;
-  allowBackorder?: boolean;
+  warehouse: string; // warehouse ObjectId
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
+export interface Warehouse {
+  _id?: string;
+  name: string;
+  code: string;
+  address?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  postalCode?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isActive: boolean;
+  geoLocation: {
+    lat: number;
+    lng: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Variant {

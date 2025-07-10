@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { Box, Button, Container, Paper, TextField, Typography } from '@mui/material';
@@ -17,10 +17,14 @@ export default function BrandFormPage() {
   const isEdit = !!id;
   const navigate = useNavigate();
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof brandSchema>>({
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting }, watch, setValue } = useForm<z.infer<typeof brandSchema>>({
     resolver: zodResolver(brandSchema),
     defaultValues: { name: '', slug: '', description: '' },
   });
+
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const nameValue = watch('name');
+  const slugValue = watch('slug');
 
   useEffect(() => {
     if (isEdit && id) {
@@ -33,6 +37,18 @@ export default function BrandFormPage() {
       });
     }
   }, [id, isEdit, reset]);
+
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      const generatedSlug = nameValue
+        ? nameValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+        : '';
+      setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  }, [nameValue, slugManuallyEdited, setValue]);
 
   const onSubmit = async (data: z.infer<typeof brandSchema>) => {
     if (isEdit && id) await updateBrandAPI(id, data);
@@ -51,14 +67,24 @@ export default function BrandFormPage() {
             name="name"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Brand Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }} />
+              <TextField {...field} label="Brand Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }}
+                onChange={e => {
+                  field.onChange(e);
+                  setSlugManuallyEdited(false);
+                }}
+              />
             )}
           />
           <Controller
             name="slug"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Slug" fullWidth error={!!errors.slug} helperText={errors.slug?.message} sx={{ mb: 3 }} />
+              <TextField {...field} label="Slug" fullWidth error={!!errors.slug} helperText={errors.slug?.message} sx={{ mb: 3 }}
+                onChange={e => {
+                  field.onChange(e);
+                  setSlugManuallyEdited(true);
+                }}
+              />
             )}
           />
           <Controller

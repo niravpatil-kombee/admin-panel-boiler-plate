@@ -17,6 +17,10 @@ import CollectionListPage from '../pages/collection/CollectionList';
 import CollectionFormPage from '../pages/collection/CollectionForm';
 import AttributeForm from '../pages/attributes/AttributesForm';
 import AttributesList from '../pages/attributes/AttributesList';
+import WarehouseListPage from '../pages/warehouses/WarehouseList';
+import WarehouseFormPage from '../pages/warehouses/WarehouseForm';
+import InventoryListPage from '../pages/inventory/InventoryList';
+import InventoryFormPage from '../pages/inventory/InventoryForm';
 
 export default function AppRouter() {
     const routes = useRoutes([
@@ -59,6 +63,12 @@ export default function AppRouter() {
                 { path: 'attributes', element: <AttributesList /> },
                 { path: 'attributes/new', element: <AttributeForm /> },
                 { path: 'attributes/edit/:id', element: <AttributeForm /> },
+                { path: 'warehouses', element: <WarehouseListPage /> },
+                { path: 'warehouses/new', element: <WarehouseFormPage /> },
+                { path: 'warehouses/edit/:id', element: <WarehouseFormPage /> },
+                { path: 'inventory', element: <InventoryListPage /> },
+                { path: 'inventory/new', element: <InventoryFormPage /> },
+                { path: 'inventory/edit/:id', element: <InventoryFormPage /> },
             ]
         },
         { path: '*', element: <Navigate to="/" replace /> },

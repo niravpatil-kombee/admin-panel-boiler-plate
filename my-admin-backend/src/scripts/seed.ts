@@ -42,18 +42,15 @@ const seedDatabase = async () => {
             { name: 'product:update', description: 'Update a product' },
             { name: 'product:delete', description: 'Delete a product' },
           
-            // Product Variant Management
-            { name: 'variant:manage', description: 'Manage product variants' },
+            // // Product Variant Management
+            // { name: 'variant:manage', description: 'Manage product variants' },
           
-            // Product Image Management
-            { name: 'image:upload', description: 'Upload product images' },
-            { name: 'image:delete', description: 'Delete product images' },
-          
-            // Inventory Management
-            { name: 'inventory:update', description: 'Update product inventory' },
+            // // Product Image Management
+            // { name: 'image:upload', description: 'Upload product images' },
+            // { name: 'image:delete', description: 'Delete product images' },
           
             // Pricing Management
-            { name: 'pricing:update', description: 'Update product pricing' },
+            // { name: 'pricing:update', description: 'Update product pricing' },
           
             // Category Management
             { name: 'category:create', description: 'Create a new category' },
@@ -73,11 +70,23 @@ const seedDatabase = async () => {
             { name: 'collection:update', description: 'Update a collection' },
             { name: 'collection:delete', description: 'Delete a collection' },
 
-             // Attributes Management
-             { name: 'attribute:create', description: 'Create a new attribute' },
-             { name: 'attribute:read', description: 'Read attribute data' },
-             { name: 'attribute:update', description: 'Update a attribute' },
-             { name: 'attribute:delete', description: 'Delete a attribute' },
+            // Warehouse Management
+            { name: 'warehouse:create', description: 'Create a new warehouse' },
+            { name: 'warehouse:read', description: 'Read warehouse data' },
+            { name: 'warehouse:update', description: 'Update a warehouse' },
+            { name: 'warehouse:delete', description: 'Delete a warehouse' },
+
+            // Inventory Management
+            { name: 'inventory:create', description: 'Create a new inventory' },
+            { name: 'inventory:read', description: 'Read inventory data' },
+            { name: 'inventory:update', description: 'Update an inventory' },
+            { name: 'inventory:delete', description: 'Delete an inventory' },
+
+            // Attributes Management
+            { name: 'attribute:create', description: 'Create a new attribute' },
+            { name: 'attribute:read', description: 'Read attribute data' },
+            { name: 'attribute:update', description: 'Update a attribute' },
+            { name: 'attribute:delete', description: 'Delete a attribute' },
           ];
           
 

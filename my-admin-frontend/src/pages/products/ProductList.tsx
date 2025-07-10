@@ -155,6 +155,9 @@ export default function ProductListPage() {
                     <Typography variant="body2" color="text.secondary">
                       Stock: {stock}
                     </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Description: {product.description}
+                    </Typography>
 
                     {/* Show product-level attributes */}
                     {/* {product.productAttributes?.length > 0 && (

@@ -63,6 +63,7 @@ export interface IInventory {
   quantity: number;
   allowBackorder: boolean;
   lowStockThreshold?: number;
+  warehouse: Types.ObjectId; // Reference to Warehouse
 }
 
 export interface IVariant {
@@ -75,7 +76,27 @@ export interface IVariant {
   inventory: IInventory;
 }
 
-export interface IProduct extends Document {
+export interface IGeoLocation {
+  lat: number;
+  lng: number;
+}
+
+export interface IWarehouse extends Document {
+  name: string;
+  code: string;
+  address?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  postalCode?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isActive: boolean;
+  geoLocation: IGeoLocation; 
+}
+
+
+export interface IProduct {
   name: string;
   slug: string;
   description?: string;

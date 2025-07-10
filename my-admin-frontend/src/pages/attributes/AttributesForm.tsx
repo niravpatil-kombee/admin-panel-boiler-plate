@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { Box, Button, Container, Paper, TextField, Typography, MenuItem } from '@mui/material';
@@ -20,7 +20,7 @@ export default function AttributeFormPage() {
   const isEdit = !!id;
   const navigate = useNavigate();
 
-  const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<z.infer<typeof attributeSchema>>({
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<z.infer<typeof attributeSchema>>({
     resolver: zodResolver(attributeSchema),
     defaultValues: {
       name: '',
@@ -33,6 +33,9 @@ export default function AttributeFormPage() {
   });
 
   const inputType = watch('inputType');
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const nameValue = watch('name');
+  const slugValue = watch('slug');
 
   useEffect(() => {
     if (isEdit && id) {
@@ -48,6 +51,19 @@ export default function AttributeFormPage() {
       });
     }
   }, [id, isEdit, reset]);
+
+  // Auto-generate slug from name unless manually edited
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      const generatedSlug = nameValue
+        ? nameValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+        : '';
+      setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  }, [nameValue, slugManuallyEdited, setValue]);
 
   const onSubmit = async (data: z.infer<typeof attributeSchema>) => {
     // Convert data to FormData for API
@@ -80,14 +96,24 @@ export default function AttributeFormPage() {
             name="name"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Attribute Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }} />
+              <TextField {...field} label="Attribute Name" fullWidth error={!!errors.name} helperText={errors.name?.message} sx={{ mb: 3 }}
+                onChange={e => {
+                  field.onChange(e);
+                  setSlugManuallyEdited(false);
+                }}
+              />
             )}
           />
           <Controller
             name="slug"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Slug" fullWidth error={!!errors.slug} helperText={errors.slug?.message} sx={{ mb: 3 }} />
+              <TextField {...field} label="Slug" fullWidth error={!!errors.slug} helperText={errors.slug?.message} sx={{ mb: 3 }}
+                onChange={e => {
+                  field.onChange(e);
+                  setSlugManuallyEdited(true);
+                }}
+              />
             )}
           />
           <Controller

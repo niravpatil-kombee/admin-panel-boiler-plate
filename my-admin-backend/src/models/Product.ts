@@ -11,13 +11,6 @@ const AttributeValueSchema = new Schema({
   fileUrl: { type: String },
 }, { _id: false });
 
-const InventorySchema = new Schema<IInventory>({
-  sku: { type: String, required: true },
-  quantity: { type: Number, required: true },
-  allowBackorder: { type: Boolean, default: false },
-  lowStockThreshold: { type: Number },
-}, { _id: false });
-
 const VariantSchema = new Schema<IVariant>({
   name: { type: String, required: true },
   sku: { type: String, required: true },
@@ -25,7 +18,7 @@ const VariantSchema = new Schema<IVariant>({
   stock: { type: Number, required: true },
   images: [{ type: String }],
   attributes: [AttributeValueSchema],
-  inventory: { type: InventorySchema, required: true },
+  inventory: { type: Schema.Types.ObjectId, ref: 'Inventory', required: true },
 }, { _id: false });
 
 const ProductSchema = new Schema<IProduct>({

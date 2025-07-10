@@ -21,6 +21,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import VariantForm from "./VariantForm";
 import { getAttributesAPI } from "../../services/attributes.api";
+import { getInventoryListAPI } from "../../services/inventory.api";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -42,12 +43,7 @@ const productSchema = z.object({
         attributes: z
           .array(z.object({ attributeId: z.string(), value: z.any() }))
           .optional(),
-        inventory: z.object({
-          sku: z.string(),
-          quantity: z.coerce.number(),
-          allowBackorder: z.boolean(),
-          lowStockThreshold: z.coerce.number().optional(),
-        }),
+        inventory: z.string().min(1), 
       })
     )
     .optional(),
@@ -64,7 +60,9 @@ export default function ProductFormPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
-
+  const [inventories, setInventories] = useState<
+    { _id: string; sku: string }[]
+  >([]);
   const form = useForm<ProductFormSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -77,6 +75,9 @@ export default function ProductFormPage() {
       variants: [],
     },
   });
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const nameValue = form.watch('name');
+  const slugValue = form.watch('slug');
 
   const {
     control,
@@ -91,16 +92,36 @@ export default function ProductFormPage() {
     remove: removeVariant,
   } = useFieldArray({ control, name: "variants" });
 
-
+  // Auto-generate slug from name unless manually edited
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      const generatedSlug = nameValue
+        ? nameValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+        : '';
+      form.setValue('slug', generatedSlug, { shouldValidate: true });
+    }
+  }, [nameValue, slugManuallyEdited]);
 
   useEffect(() => {
-    Promise.all([getCategoriesAPI(), getBrandsAPI(), getAttributesAPI()]).then(
-      ([catData, brandData, attrData]) => {
-        setCategories(catData.categories);
-        setBrands(brandData.brands);
-        setAttributes(attrData.attributes);
-      }
-    );
+    Promise.all([
+      getCategoriesAPI(),
+      getBrandsAPI(),
+      getAttributesAPI(),
+      getInventoryListAPI(),
+    ]).then(([catData, brandData, attrData, inventoryData]) => {
+      setCategories(catData.categories);
+      setBrands(brandData.brands);
+      setAttributes(attrData.attributes);
+      setInventories(
+        (inventoryData.inventories || []).map((inv: any) => ({
+          _id: inv._id,
+          sku: inv.sku,
+        }))
+      );
+    });
 
     if (isEdit && id) {
       setLoading(true);
@@ -109,31 +130,49 @@ export default function ProductFormPage() {
           if (!product) throw new Error("Product not found");
           reset({
             ...product,
-            brand: product.brand && typeof product.brand === 'object' && '_id' in product.brand ? (product.brand as any)._id : product.brand,
-            category: product.category && typeof product.category === 'object' && '_id' in product.category ? (product.category as any)._id : product.category,
-            productAttributes: (product.productAttributes ?? []).map(attr => ({
-              ...attr,
-              attributeId: attr.attributeId && typeof attr.attributeId === 'object' && '_id' in (attr.attributeId as any)
-                ? (attr.attributeId as any)._id
-                : attr.attributeId,
-            })),
+            brand:
+              product.brand &&
+              typeof product.brand === "object" &&
+              "_id" in product.brand
+                ? (product.brand as any)._id
+                : product.brand,
+            category:
+              product.category &&
+              typeof product.category === "object" &&
+              "_id" in product.category
+                ? (product.category as any)._id
+                : product.category,
+            productAttributes: (product.productAttributes ?? []).map(
+              (attr) => ({
+                ...attr,
+                attributeId:
+                  attr.attributeId &&
+                  typeof attr.attributeId === "object" &&
+                  "_id" in (attr.attributeId as any)
+                    ? (attr.attributeId as any)._id
+                    : attr.attributeId,
+              })
+            ),
             variants: (product.variants ?? []).map((v) => ({
               ...v,
-              attributes: (v.attributes ?? []).map(attr => ({
+              attributes: (v.attributes ?? []).map((attr) => ({
                 ...attr,
-                attributeId: attr.attributeId && typeof attr.attributeId === 'object' && '_id' in (attr.attributeId as any)
-                  ? (attr.attributeId as any)._id
-                  : attr.attributeId,
+                attributeId:
+                  attr.attributeId &&
+                  typeof attr.attributeId === "object" &&
+                  "_id" in (attr.attributeId as any)
+                    ? (attr.attributeId as any)._id
+                    : attr.attributeId,
               })),
               images: v.images ?? [],
               price: v.price ?? 0,
               stock: v.stock ?? 0,
-              inventory: {
-                sku: v.inventory?.sku ?? "",
-                quantity: v.inventory?.quantity ?? 0,
-                allowBackorder: v.inventory?.allowBackorder ?? false,
-                lowStockThreshold: v.inventory?.lowStockThreshold ?? 5,
-              },
+              inventory:
+                typeof v.inventory === "object" && v.inventory !== null && "_id" in v.inventory
+                  ? String(v.inventory._id)
+                  : typeof v.inventory === "string"
+                    ? v.inventory
+                    : "",
             })),
           });
         })
@@ -156,16 +195,25 @@ export default function ProductFormPage() {
       formData.append("description", data.description ?? "");
 
       // Handle product-level file attributes
-      const productAttributesPayload = (data.productAttributes ?? []).map((attr, idx) => {
-        const attrDef = attributes.find(a => a._id === attr.attributeId);
-        if (attrDef && attrDef.inputType === 'file' && attr.value instanceof File) {
-          const fileKey = `productImage_${idx}`;
-          formData.append(fileKey, attr.value);
-          return { ...attr, value: fileKey, inputType: 'file', fileKey };
+      const productAttributesPayload = (data.productAttributes ?? []).map(
+        (attr, idx) => {
+          const attrDef = attributes.find((a) => a._id === attr.attributeId);
+          if (
+            attrDef &&
+            attrDef.inputType === "file" &&
+            attr.value instanceof File
+          ) {
+            const fileKey = `productImage_${idx}`;
+            formData.append(fileKey, attr.value);
+            return { ...attr, value: fileKey, inputType: "file", fileKey };
+          }
+          return attr;
         }
-        return attr;
-      });
-      formData.append("productAttributes", JSON.stringify(productAttributesPayload));
+      );
+      formData.append(
+        "productAttributes",
+        JSON.stringify(productAttributesPayload)
+      );
 
       // Handle variants
       const variantPayload = (data.variants ?? []).map((variant, vIdx) => {
@@ -176,18 +224,26 @@ export default function ProductFormPage() {
           });
         }
         // Handle variant attribute files
-        const attributesPayload = (variant.attributes ?? []).map((attr, aIdx) => {
-          const attrDef = attributes.find(a => a._id === attr.attributeId);
-          if (attrDef && attrDef.inputType === 'file' && attr.value instanceof File) {
-            const fileKey = `variantImage_${vIdx}_${aIdx}`;
-            formData.append(fileKey, attr.value);
-            return { ...attr, value: fileKey, inputType: 'file', fileKey };
+        const attributesPayload = (variant.attributes ?? []).map(
+          (attr, aIdx) => {
+            const attrDef = attributes.find((a) => a._id === attr.attributeId);
+            if (
+              attrDef &&
+              attrDef.inputType === "file" &&
+              attr.value instanceof File
+            ) {
+              const fileKey = `variantImage_${vIdx}_${aIdx}`;
+              formData.append(fileKey, attr.value);
+              return { ...attr, value: fileKey, inputType: "file", fileKey };
+            }
+            return attr;
           }
-          return attr;
-        });
+        );
         return {
           ...variant,
-          images: (variant.images ?? []).map((_, fileIdx) => `variantImages_${vIdx}_${fileIdx}`),
+          images: (variant.images ?? []).map(
+            (_, fileIdx) => `variantImages_${vIdx}_${fileIdx}`
+          ),
           attributes: attributesPayload,
         };
       });
@@ -223,7 +279,7 @@ export default function ProductFormPage() {
     (attr) => attr.isVariantLevel
   );
 
-  console.log('[ProductFormPage] formState.errors:', form.formState.errors);
+  console.log("[ProductFormPage] formState.errors:", form.formState.errors);
 
   return (
     <Box
@@ -231,8 +287,8 @@ export default function ProductFormPage() {
       mx="auto"
       p={4}
       component="form"
-      onSubmit={e => {
-        console.log('[ProductFormPage] Form submit event');
+      onSubmit={(e) => {
+        console.log("[ProductFormPage] Form submit event");
         handleSubmit(onSubmit)(e);
       }}
     >
@@ -250,6 +306,10 @@ export default function ProductFormPage() {
               fullWidth
               error={!!form.formState.errors.name}
               helperText={form.formState.errors.name?.message}
+              onChange={e => {
+                field.onChange(e);
+                setSlugManuallyEdited(false);
+              }}
             />
           )}
         />
@@ -264,6 +324,10 @@ export default function ProductFormPage() {
               fullWidth
               error={!!form.formState.errors.slug}
               helperText={form.formState.errors.slug?.message}
+              onChange={e => {
+                field.onChange(e);
+                setSlugManuallyEdited(true);
+              }}
             />
           )}
         />
@@ -333,82 +397,98 @@ export default function ProductFormPage() {
       </Typography>
 
       <Box display="flex" flexDirection="column" gap={2} mb={2}>
-        {Array.from({ length: Math.ceil(productLevelAttributes.length / 2) }).map((_, rowIdx) => (
+        {Array.from({
+          length: Math.ceil(productLevelAttributes.length / 2),
+        }).map((_, rowIdx) => (
           <Box key={rowIdx} display="flex" gap={2} mb={2}>
-            {productLevelAttributes.slice(rowIdx * 2, rowIdx * 2 + 2).map((attr, indexInRow) => {
-              const globalIndex = rowIdx * 2 + indexInRow;
-              return (
-                <Box key={attr._id} minWidth={250} flex={1}>
-                  <Controller
-                    name={`productAttributes.${globalIndex}.attributeId`}
-                    control={control}
-                    defaultValue={attr._id}
-                    render={({ field }) => <input type="hidden" {...field} />}
-                  />
-                  <Controller
-                    name={`productAttributes.${globalIndex}.value`}
-                    control={control}
-                    render={({ field }) => {
-                      if (attr.inputType === "text") {
-                        return (
-                          <TextField
-                            {...field}
-                            label={attr.name}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                            value={field.value ?? ""}
-                          />
-                        );
-                      }
-                      if (attr.inputType === "dropdown" || attr.inputType === "multi-select") {
-                        return (
-                          <TextField
-                            {...field}
-                            select
-                            label={attr.name}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                            value={field.value ?? ""}
-                          >
-                            {(attr.options || []).map((opt) => (
-                              <MenuItem key={opt} value={opt}>
-                                {opt}
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        );
-                      }
-                      if (attr.inputType === "file") {
-                        return (
-                          <Box mb={2}>
-                            <Typography fontSize={13} fontWeight={500} mb={0.5}>
-                              {attr.name}
-                            </Typography>
-                            <input
-                              type="file"
-                              accept="*/*"
-                              onChange={(e) => field.onChange(e.target.files?.[0])}
-                              value={undefined}
+            {productLevelAttributes
+              .slice(rowIdx * 2, rowIdx * 2 + 2)
+              .map((attr, indexInRow) => {
+                const globalIndex = rowIdx * 2 + indexInRow;
+                return (
+                  <Box key={attr._id} minWidth={250} flex={1}>
+                    <Controller
+                      name={`productAttributes.${globalIndex}.attributeId`}
+                      control={control}
+                      defaultValue={attr._id}
+                      render={({ field }) => <input type="hidden" {...field} />}
+                    />
+                    <Controller
+                      name={`productAttributes.${globalIndex}.value`}
+                      control={control}
+                      render={({ field }) => {
+                        if (attr.inputType === "text") {
+                          return (
+                            <TextField
+                              {...field}
+                              label={attr.name}
+                              fullWidth
+                              sx={{ mb: 2 }}
+                              value={field.value ?? ""}
                             />
-                            {field.value && field.value instanceof File && (
-                              <Box mt={1}>
-                                <Typography fontSize={12}>Selected: {field.value.name}</Typography>
-                              </Box>
-                            )}
-                          </Box>
+                          );
+                        }
+                        if (
+                          attr.inputType === "dropdown" ||
+                          attr.inputType === "multi-select"
+                        ) {
+                          return (
+                            <TextField
+                              {...field}
+                              select
+                              label={attr.name}
+                              fullWidth
+                              sx={{ mb: 2 }}
+                              value={field.value ?? ""}
+                            >
+                              {(attr.options || []).map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                  {opt}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          );
+                        }
+                        if (attr.inputType === "file") {
+                          return (
+                            <Box mb={2}>
+                              <Typography
+                                fontSize={13}
+                                fontWeight={500}
+                                mb={0.5}
+                              >
+                                {attr.name}
+                              </Typography>
+                              <input
+                                type="file"
+                                accept="*/*"
+                                onChange={(e) =>
+                                  field.onChange(e.target.files?.[0])
+                                }
+                                value={undefined}
+                              />
+                              {/* {field.value && field.value instanceof File && (
+                                <Box mt={1}>
+                                  <Typography fontSize={12}>
+                                    Selected: {field.value.name}
+                                  </Typography>
+                                </Box>
+                              )} */}
+                            </Box>
+                          );
+                        }
+                        // Fallback for missing or unknown inputType
+                        return (
+                          <Typography color="error" fontSize={12}>
+                            Unknown or missing inputType for attribute:{" "}
+                            {attr.name}
+                          </Typography>
                         );
-                      }
-                      // Fallback for missing or unknown inputType
-                      return (
-                        <Typography color="error" fontSize={12}>
-                          Unknown or missing inputType for attribute: {attr.name}
-                        </Typography>
-                      );
-                    }}
-                  />
-                </Box>
-              );
-            })}
+                      }}
+                    />
+                  </Box>
+                );
+              })}
           </Box>
         ))}
       </Box>
@@ -419,15 +499,15 @@ export default function ProductFormPage() {
       </Typography>
 
       <VariantForm
-  key={variantFields.length + JSON.stringify(form.getValues("variants"))}
-  fields={variantFields}
-  append={appendVariant}
-  remove={removeVariant}
-  control={control}
-  errors={form.formState.errors}
-  variantAttributes={variantLevelAttributes} 
-/>
-
+        key={variantFields.length + JSON.stringify(form.getValues("variants"))}
+        fields={variantFields}
+        append={appendVariant}
+        remove={removeVariant}
+        control={control}
+        errors={form.formState.errors}
+        variantAttributes={variantLevelAttributes}  
+        inventories={inventories}
+      />
 
       <Button
         type="submit"
