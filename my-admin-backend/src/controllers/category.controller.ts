@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
 import Category from '../models/Category';
 import { isValidObjectId } from 'mongoose';
+import { ICategory} from '../types/index'
 
 export const createCategory = async (req: Request, res: Response) => {
-  const categoryData: any = {
+  const categoryData: ICategory = {
     name: req.body.name,
     slug: req.body.slug,
     description: req.body.description,
   };
 
-  if (req.body.parent) {
-    categoryData.parent = req.body.parent;
-  }
+  // if (req.body.parent) {
+  //   categoryData.parent = req.body.parent;
+  // }
 
   try {
     const existingCategory = await Category.findOne({ name: req.body.name });
@@ -96,17 +97,24 @@ export const updateCategory = async (req: Request, res: Response) => {
       });
     }
 
-    const updateData: any = {
+    const updateData: ICategory = {
       name: req.body.name,
       slug: req.body.slug,
       description: req.body.description,
     };
 
-    if (req.body.parent) {
-      updateData.parent = req.body.parent;
-    } else {
-      updateData.parent = undefined;
+    //TODO:IT WILL REMOVE CATEGORY PARENT FROM HERE?
+    // if (req.body.parent) {
+    //   updateData.parent = req.body.parent;
+    // }
+
+    const existingCategory = await Category.findOne({ name: req.body.name });
+    if (existingCategory) {
+      return res.status(409).json({
+        message: 'Category already exists with this name',
+      });
     }
+    
 
     const category = await Category.findByIdAndUpdate(categoryId, updateData, { new: true }).exec();
 

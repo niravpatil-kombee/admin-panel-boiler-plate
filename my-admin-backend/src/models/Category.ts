@@ -5,7 +5,7 @@ const CategorySchema = new Schema<ICategory & Document>({
   name: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   description: { type: String },
-  parent: { type: Types.ObjectId, ref: 'Category' },
+  // parent: { type: Types.ObjectId, ref: 'Category' },
 }, { timestamps: true });
 
 export default model<ICategory & Document>('Category', CategorySchema);

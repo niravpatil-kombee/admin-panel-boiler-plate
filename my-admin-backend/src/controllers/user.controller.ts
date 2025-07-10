@@ -1,14 +1,24 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import { isValidObjectId } from 'mongoose';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendResetPasswordEmail } from '../utils/emailService';
 
 export const create = async (req: Request, res: Response) => {
+    const randomPassword = crypto.randomBytes(12).toString('hex');
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
     const userData = {
         name: req.body.name,
         email: req.body.email,
-        password: req.body.password,
+        password: hashedPassword,
         role: req.body.role,
-    }
+        resetPasswordToken: resetToken,
+        resetPasswordExpires,
+    };
     try {
         const existingUser = await User.findOne({ email: req.body.email });
         if (existingUser) {
@@ -20,8 +30,11 @@ export const create = async (req: Request, res: Response) => {
         const user = new User(userData);
         await user.save();
 
+        // Send reset password email
+        await sendResetPasswordEmail(user.email, resetToken, true);
+
         return res.status(201).json({
-            message: "User created successfully",
+            message: "User created successfully. Password setup email sent.",
             user,
         });
 
@@ -29,7 +42,7 @@ export const create = async (req: Request, res: Response) => {
         return res.status(500).json({
             message: "Error while creating user",
             error: error.message,
-          });
+        });
     }
 };
 
@@ -79,6 +92,11 @@ export const getOne = async (req: Request, res: Response) => {
 
 export const update = async (req: Request, res: Response) => {
     const userId = req.params.id;
+    const userData = {
+      name: req.body.name,
+      email: req.body.email,
+      role: req.body.role,
+  };
     try {
         if (!isValidObjectId(userId)) {
             return res.status(400).json({
@@ -87,7 +105,7 @@ export const update = async (req: Request, res: Response) => {
             });
           }
 
-        const user = await User.findByIdAndUpdate(userId, req.body, { new: true }).exec();
+        const user = await User.findByIdAndUpdate(userId, userData, { new: true }).exec();
         if (!user) {
             return res.status(404).json({
               message: "User not found",

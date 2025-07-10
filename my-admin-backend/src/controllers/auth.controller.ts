@@ -164,7 +164,7 @@ export const forgotPass = async (req: Request, res: Response, next: NextFunction
         existingUser.resetPasswordExpires = new Date(Date.now() + 3600000);
         await existingUser.save();
 
-        const emailSent = await sendResetPasswordEmail(email, resetToken);
+        const emailSent = await sendResetPasswordEmail(email, resetToken, false);
 
         if (emailSent) {
             res.json({

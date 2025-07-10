@@ -4,8 +4,6 @@ import { isValidObjectId } from "mongoose";
 
 export const createAttribute = async (req: Request, res: Response) => {
     try {
-      console.log('REQ.BODY:', req.body);
-      console.log('REQ.FILE:', req.file);
       const {
         name,
         slug,

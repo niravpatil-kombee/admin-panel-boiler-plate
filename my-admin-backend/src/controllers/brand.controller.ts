@@ -77,6 +77,11 @@ export const getBrandById = async (req: Request, res: Response) => {
 
 export const updateBrand = async (req: Request, res: Response) => {
     const brandId = req.params.id;
+    const updateData = {
+      name: req.body.name,
+      slug: req.body.slug,
+      description: req.body.description,
+    };
     try {
         if (!isValidObjectId(brandId)) {
             return res.status(400).json({
@@ -84,7 +89,15 @@ export const updateBrand = async (req: Request, res: Response) => {
               Id: brandId,
             });
           }
-        const brand = await Brand.findByIdAndUpdate(brandId, req.body, { new: true }).exec();
+
+          const existingBrand = await Brand.findOne({ name: req.body.name });
+          if (existingBrand) {
+            return res.status(409).json({
+              message: "Brand already exists with this name",
+            });
+          }
+            
+        const brand = await Brand.findByIdAndUpdate(brandId, updateData, { new: true }).exec();
         if (!brand) {
             return res.status(404).json({
               message: "Brand not found",

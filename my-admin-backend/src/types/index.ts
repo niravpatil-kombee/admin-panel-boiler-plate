@@ -25,15 +25,13 @@ export interface IUser extends Document {
 export interface ICategory {
   name: string;
   slug: string;
-  parent?: Types.ObjectId;
+  // parent?: Types.ObjectId;
   description?: string;
-  image?: string;
 }
 
 export interface IBrand {
   name: string;
   slug: string;
-  logo?: string;
   description?: string;
 }
 
@@ -41,8 +39,6 @@ export interface ICollection {
   name: string;
   slug: string;
   description?: string;
-  image?: string;
-  products: Types.ObjectId[];
 }
 
 export type AttributeInputType = 'text' | 'dropdown' | 'multi-select' | 'file';
@@ -89,6 +85,7 @@ export interface IProduct extends Document {
   isPublished: boolean;
   productAttributes: IAttributeValue[];
   variants: IVariant[];
+  collection?: string;
 }
 
  

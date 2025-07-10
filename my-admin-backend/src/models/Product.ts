@@ -34,6 +34,7 @@ const ProductSchema = new Schema<IProduct>({
   description: { type: String },
   brand: { type: Types.ObjectId, ref: 'Brand' },
   category: { type: Types.ObjectId, ref: 'Category' },
+  collection: { type: Types.ObjectId, ref: 'Collection' },
   tags: [{ type: String }],
   isPublished: { type: Boolean, default: false },
   productAttributes: [AttributeValueSchema],

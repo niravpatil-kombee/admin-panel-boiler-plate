@@ -52,8 +52,6 @@ app.use(passport.session());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.post("/api/refresh-session", (req, res) => {
-  console.log("Session:", req.session);
-  console.log("User:", req.user);
 
   if (req.isAuthenticated()) {
     const user = req.user; // preserve user before regenerating
