@@ -109,10 +109,22 @@ export default function ProductFormPage() {
           if (!product) throw new Error("Product not found");
           reset({
             ...product,
-            productAttributes: product.productAttributes ?? [],
+            brand: product.brand && typeof product.brand === 'object' && '_id' in product.brand ? (product.brand as any)._id : product.brand,
+            category: product.category && typeof product.category === 'object' && '_id' in product.category ? (product.category as any)._id : product.category,
+            productAttributes: (product.productAttributes ?? []).map(attr => ({
+              ...attr,
+              attributeId: attr.attributeId && typeof attr.attributeId === 'object' && '_id' in (attr.attributeId as any)
+                ? (attr.attributeId as any)._id
+                : attr.attributeId,
+            })),
             variants: (product.variants ?? []).map((v) => ({
               ...v,
-              attributes: v.attributes ?? [],
+              attributes: (v.attributes ?? []).map(attr => ({
+                ...attr,
+                attributeId: attr.attributeId && typeof attr.attributeId === 'object' && '_id' in (attr.attributeId as any)
+                  ? (attr.attributeId as any)._id
+                  : attr.attributeId,
+              })),
               images: v.images ?? [],
               price: v.price ?? 0,
               stock: v.stock ?? 0,
