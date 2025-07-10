@@ -40,9 +40,15 @@ export default function AttributeListPage() {
   };
 
   const columns: GridColDef<Attribute>[] = [
+    
     { field: 'name', headerName: 'Name', flex: 1 },
     { field: 'slug', headerName: 'Slug', flex: 1 },
-    { field: 'isVariantLevel', headerName: 'Variant Level', flex: 1, valueFormatter: ({ value }) => value ? 'Yes' : 'No' },
+    {
+      field: 'isVariantLevel',
+      headerName: 'Variant Level',
+      flex: 1,
+      renderCell: (params) => (params.row.isVariantLevel ? 'Yes' : 'No'),
+    },
     {
       field: 'actions', type: 'actions', headerName: 'Actions', width: 100,
       getActions: ({ id }) => [
