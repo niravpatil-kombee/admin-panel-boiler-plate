@@ -59,7 +59,7 @@ export default function CategoryFormPage() {
     getCategoriesAPI()
       .then((data) => setCategories(data.categories))
       .catch((err) => console.error("Failed to fetch categories:", err));
-
+  
     if (id) {
       setLoading(true);
       getCategoryByIdAPI(id)

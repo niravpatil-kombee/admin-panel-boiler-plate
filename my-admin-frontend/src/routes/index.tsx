@@ -21,6 +21,8 @@ import WarehouseListPage from '../pages/warehouses/WarehouseList';
 import WarehouseFormPage from '../pages/warehouses/WarehouseForm';
 import InventoryListPage from '../pages/inventory/InventoryList';
 import InventoryFormPage from '../pages/inventory/InventoryForm';
+import ForgotPasswordPage from '../pages/ForgotPassword';
+import ResetPasswordPage from '../pages/ResetPassword';
 
 export default function AppRouter() {
     const routes = useRoutes([
@@ -28,8 +30,14 @@ export default function AppRouter() {
             path: '/auth',
             children: [
                 { path: 'login', element: <LoginPage /> },
+               
+                { path: 'forgot-password', element: <ForgotPasswordPage /> },
                 { path: '*', element: <Navigate to="/auth/login" replace /> }
             ]
+        },
+        {
+            path: '/reset-password/:token',
+            element: <ResetPasswordPage />
         },
         {
             path: '/',

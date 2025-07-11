@@ -221,8 +221,8 @@ export default function ProductFormPage() {
         if (variant.images) {
           variant.images.forEach((file, fileIdx) => {
             formData.append(`variantImages_${vIdx}_${fileIdx}`, file);
-          });
-        }
+            });
+          }
         // Handle variant attribute files
         const attributesPayload = (variant.attributes ?? []).map(
           (attr, aIdx) => {
@@ -239,13 +239,13 @@ export default function ProductFormPage() {
             return attr;
           }
         );
-        return {
-          ...variant,
-          images: (variant.images ?? []).map(
+          return {
+            ...variant,
+            images: (variant.images ?? []).map(
             (_, fileIdx) => `variantImages_${vIdx}_${fileIdx}`
-          ),
+            ),
           attributes: attributesPayload,
-        };
+          };
       });
       formData.append("variants", JSON.stringify(variantPayload));
 
@@ -407,15 +407,15 @@ export default function ProductFormPage() {
                 const globalIndex = rowIdx * 2 + indexInRow;
                 return (
                   <Box key={attr._id} minWidth={250} flex={1}>
-                    <Controller
+          <Controller
                       name={`productAttributes.${globalIndex}.attributeId`}
-                      control={control}
+            control={control}
                       defaultValue={attr._id}
                       render={({ field }) => <input type="hidden" {...field} />}
-                    />
-                    <Controller
+          />
+          <Controller
                       name={`productAttributes.${globalIndex}.value`}
-                      control={control}
+            control={control}
                       render={({ field }) => {
                         if (attr.inputType === "text") {
                           return (
@@ -489,8 +489,8 @@ export default function ProductFormPage() {
                   </Box>
                 );
               })}
-          </Box>
-        ))}
+        </Box>
+      ))}
       </Box>
 
       {/* Variants Section */}

@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import type { SubmitHandler } from 'react-hook-form';
 import { Box, TextField, Button, Typography, Container, Paper, IconButton, InputAdornment } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import useAuth from '../hooks/useAuth';
 import type { LoginCredentials } from '../types/auth';
 import { useSnackbar } from 'notistack';
@@ -9,6 +10,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { forgotPasswordAPI } from '../services/auth.api';
+import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -20,6 +23,7 @@ type LoginSchema = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const { login } = useAuth();
     const { enqueueSnackbar } = useSnackbar();
+    const navigate = useNavigate();
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginSchema>({
         resolver: zodResolver(loginSchema),
     });
@@ -87,6 +91,14 @@ export default function LoginPage() {
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                    <Button
+                        fullWidth
+                        variant="text"
+                        sx={{ mb: 1 }}
+                        onClick={() => navigate('/auth/forgot-password')}
+                    >
+                        Forgot password?
                     </Button>
                 </Box>
             </Paper>

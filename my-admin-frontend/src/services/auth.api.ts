@@ -6,6 +6,13 @@ export interface GetUsersResponse {
   totalUsers: number;
   users: User[];
 }
+export interface UserFormData {
+  _id?: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: string;
+}
 
 export const loginAPI = async (credentials: LoginCredentials) => {
   const { data } = await axios.post('/auth/login', credentials);
@@ -25,6 +32,20 @@ export const getMeAPI = async () => {
   });
   return data;
 };
+export const logoutAPI = async () => {
+  const { data } = await axios.post('/auth/logout');
+  return data;
+};
+
+export const forgotPasswordAPI = async (email: string) => {
+  const { data } = await axios.post('/auth/forgot-password', { email });
+  return data;
+};
+
+export const resetPasswordAPI = async (token: string, newPassword: string) => {
+  const { data } = await axios.post(`/auth/reset-password/${token}`, { newPassword });
+  return data;
+};
 
 
 export const getUsersAPI = async (): Promise<GetUsersResponse> => {
@@ -35,14 +56,6 @@ export const getUsersAPI = async (): Promise<GetUsersResponse> => {
 export const deleteUserAPI = async (id: string): Promise<void> => {
   await axios.delete(`/users/${id}`);
 };
-
-export interface UserFormData {
-  _id?: string;
-  name: string;
-  email: string;
-  password?: string;
-  role: string;
-}
 
 export const getUserByIdAPI = async (id: string): Promise<User> => {
   const { data } = await axios.get(`/users/${id}`);
@@ -64,7 +77,4 @@ export const refreshSessionAPI = async () => {
   return data;
 };
 
-export const logoutAPI = async () => {
-  const { data } = await axios.post('/auth/logout');
-  return data;
-};
+
