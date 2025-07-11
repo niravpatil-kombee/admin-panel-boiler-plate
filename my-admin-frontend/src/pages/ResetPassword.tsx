@@ -7,7 +7,7 @@ import { useSnackbar } from 'notistack';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { resetPasswordAPI } from '../services/auth.api';
 
 const resetSchema = z.object({
@@ -24,6 +24,10 @@ export default function ResetPasswordPage() {
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
     const { token } = useParams<{ token: string }>();
+    const location = useLocation();
+    // Determine mode from query param (?mode=set or ?mode=reset)
+    const searchParams = new URLSearchParams(location.search);
+    const mode = searchParams.get('mode') === 'set' ? 'set' : 'reset';
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ResetSchema>({
         resolver: zodResolver(resetSchema),
     });
@@ -38,7 +42,10 @@ export default function ResetPasswordPage() {
         }
         try {
             await resetPasswordAPI(token, data.newPassword);
-            enqueueSnackbar('Password has been reset successfully!', { variant: 'success' });
+            enqueueSnackbar(
+                mode === 'set' ? 'Password has been set successfully!' : 'Password has been reset successfully!',
+                { variant: 'success' }
+            );
             setSubmitted(true);
             setTimeout(() => navigate('/auth/login'), 2000);
         } catch (error: any) {
@@ -50,11 +57,13 @@ export default function ResetPasswordPage() {
         <Container component="main" maxWidth="xs">
             <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Typography component="h1" variant="h5">
-                    Reset Password
+                    {mode === 'set' ? 'Set Password' : 'Reset Password'}
                 </Typography>
                 {submitted ? (
                     <Typography sx={{ mt: 2 }} color="success.main">
-                        Password reset! Redirecting to login...
+                        {mode === 'set'
+                            ? 'Password set! Redirecting to login...'
+                            : 'Password reset! Redirecting to login...'}
                     </Typography>
                 ) : (
                     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
@@ -111,7 +120,9 @@ export default function ResetPasswordPage() {
                             sx={{ mt: 3, mb: 2 }}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Resetting...' : 'Reset Password'}
+                            {isSubmitting
+                                ? (mode === 'set' ? 'Setting...' : 'Resetting...')
+                                : (mode === 'set' ? 'Set Password' : 'Reset Password')}
                         </Button>
                     </Box>
                 )}

@@ -23,9 +23,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 const getUserSchema = (isEdit: boolean) => z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    password: isEdit
-        ? z.string().min(0).optional()
-        : z.string().min(6, 'Password must be at least 6 characters'),
+    // Only require password for edit, not for create
+    password: z.string().optional(),
     role: z.string().min(1, 'Role is required'),
 });
 
@@ -145,22 +144,25 @@ export default function UserFormPage() {
                             />
                         </Box>
 
-                        <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)' } }}>
-                            <Controller
-                                name="password"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        type="password"
-                                        label="Password"
-                                        fullWidth
-                                        error={!!errors.password}
-                                        helperText={errors.password?.message || (isEdit ? 'Leave blank to keep current password' : '')}
-                                    />
-                                )}
-                            />
-                        </Box>
+                        {/* Only show password field for edit */}
+                        {isEdit && (
+                            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)' } }}>
+                                <Controller
+                                    name="password"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            type="password"
+                                            label="Password"
+                                            fullWidth
+                                            error={!!errors.password}
+                                            helperText={!!errors.password ? errors.password?.message : 'Leave blank to keep current password'}
+                                        />
+                                    )}
+                                />
+                            </Box>
+                        )}
                     </Box>
 
                     <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
