@@ -147,6 +147,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid product ID" });
 
   try {
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) return res.status(404).json({ message: "Product not found" });
+
     const filesMap = extractFilesMap(req.files as Express.Multer.File[]);
     const {
       name,
@@ -211,6 +214,34 @@ export const updateProduct = async (req: Request, res: Response) => {
       };
     });
 
+    //logic to remove images
+    const oldVariants = existingProduct.variants || [];
+    const newSkus = parsedVariants.map((v: any) => v.sku);
+    const removedVariants = oldVariants.filter(
+      (oldvar: any) => !newSkus.includes(oldvar.sku)
+    );
+
+    for (const variant of removedVariants) {
+      if (Array.isArray(variant.images)) {
+        for (const img of variant.images) {
+          if (typeof img === "string" && img.startsWith("uploads/")) {
+            try {
+              fs.unlinkSync(path.resolve(img));
+            } catch (e) { }
+          }
+        }
+      }
+      if (Array.isArray(variant.attributes)) {
+        for (const attr of variant.attributes) {
+          if (attr.fileUrl) {
+            try {
+              fs.unlinkSync(path.resolve(attr.fileUrl));
+            } catch (e) { }
+          }
+        }
+      }
+    }
+
     const updated = await Product.findByIdAndUpdate(
       id,
       {
@@ -227,12 +258,14 @@ export const updateProduct = async (req: Request, res: Response) => {
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ message: "Product updated", product: updated });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: "Error updating product", error: error.message });
+    res.status(500).json({
+      status: 500,
+      message: "Error updating product",
+      error: error.message,
+      stack: error.stack || null
+    });
   }
 };
 
@@ -251,7 +284,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
         if (attr.fileUrl) {
           try {
             fs.unlinkSync(path.resolve(attr.fileUrl));
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     }
@@ -264,7 +297,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
             if (typeof img === "string" && img.startsWith("uploads/")) {
               try {
                 fs.unlinkSync(path.resolve(img));
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         }
@@ -274,7 +307,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
             if (attr.fileUrl) {
               try {
                 fs.unlinkSync(path.resolve(attr.fileUrl));
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         }
@@ -283,8 +316,11 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Product deleted", product: deleted });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: "Error deleting product", error: error.message });
+    res.status(500).json({
+      status: 500,
+      message: "Error deleting product",
+      error: error.message,
+      stack: error.stack || null
+    });
   }
 };
