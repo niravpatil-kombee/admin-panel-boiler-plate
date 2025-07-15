@@ -27,11 +27,13 @@ export const registerAPI = async (userData: RegisterData) => {
 export const getMeAPI = async () => {
   const { data } = await axios.get('/auth/current-user', {
     headers: {
-      'x-initial-auth': 'true' // Prevents interceptor from triggering refresh-session
+      // This is our special signal to the interceptor
+      'X-No-Retry-On-401': 'true' 
     }
   });
   return data;
 };
+
 export const logoutAPI = async () => {
   const { data } = await axios.post('/auth/logout');
   return data;
@@ -59,7 +61,7 @@ export const deleteUserAPI = async (id: string): Promise<void> => {
 
 export const getUserByIdAPI = async (id: string): Promise<User> => {
   const { data } = await axios.get(`/users/${id}`);
-  return data;
+  return data.user;
 };
 
 export const createUserAPI = async (userData: UserFormData): Promise<User> => {
@@ -72,9 +74,5 @@ export const updateUserAPI = async (id: string, userData: Partial<UserFormData>)
   return data;
 };
 
-export const refreshSessionAPI = async () => {
-  const { data } = await axios.post('/refresh-session');
-  return data;
-};
 
 

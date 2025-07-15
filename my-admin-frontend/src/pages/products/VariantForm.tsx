@@ -253,17 +253,20 @@ const VariantForm: React.FC<VariantFormProps> = ({
             ))}
           </Box>
 
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              remove(index);
-            }}
-            color="error"
-            variant="outlined"
-            sx={{ mt: 1 }}
-          >
-            Remove Variant
-          </Button>
+          {/* Remove Variant Button: Only show if more than one variant */}
+          {fields.length > 1 && (
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                remove(index);
+              }}
+              color="error"
+              variant="outlined"
+              sx={{ mt: 1 }}
+            >
+              Remove Variant
+            </Button>
+          )}  
         </Box>
       ))}
 

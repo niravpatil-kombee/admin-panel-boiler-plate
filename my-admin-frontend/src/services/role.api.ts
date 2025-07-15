@@ -14,7 +14,7 @@ export const getRolesAPI = async (): Promise<GetRolesResponse> => {
 
 export const getRoleByIdAPI = async (id: string): Promise<Role> => {
     const { data } = await axios.get(`/roles/${id}`);
-    return data;
+    return data.role;
 };
 
 export const createRoleAPI = async (roleData: Partial<Role>): Promise<Role> => {

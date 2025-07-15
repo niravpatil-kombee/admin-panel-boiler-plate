@@ -64,9 +64,9 @@ export const getCategoryById = async (req: Request, res: Response) => {
       });
     }
 
-    const category = await Category.findById(categoryId)
-      .populate('parent', '_id name')
-      .exec();
+    const category = await Category.findById(categoryId);
+      // .populate('parent', '_id name')
+      // .exec();
 
     if (!category) {
       return res.status(404).json({

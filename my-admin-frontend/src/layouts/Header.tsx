@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, IconButton, Menu, MenuItem, Box, Avatar } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
 // This width must match the width of the Sidebar for the layout to work correctly.
@@ -8,7 +7,7 @@ const drawerWidth = 240;
 
 export default function Header() {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
+  
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

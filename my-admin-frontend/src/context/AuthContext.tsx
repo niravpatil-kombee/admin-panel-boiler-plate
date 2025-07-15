@@ -15,37 +15,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      if (localStorage.getItem('isLoggedIn') === 'true') {
-        try {
-          const { user: fetchedUser } = await getMeAPI();
-          setUser(fetchedUser);
-        } catch {
-          setUser(null);
-        }
+      try {
+        const { user: fetchedUser } = await getMeAPI();
+        setUser(fetchedUser);
+      } catch {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initializeAuth();
   }, []);
-
   const login = async (credentials: LoginCredentials) => {
-    await loginAPI(credentials);
-    localStorage.setItem('isLoggedIn', 'true');
-  
-    // ✅ Wait 100ms to let browser set the session cookie
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  
-    const { user: fetchedUser } = await getMeAPI();
-    setUser(fetchedUser);
+    // 1. Call loginAPI. It will now return the user data.
+    const { user: loggedInUser } = await loginAPI(credentials);
+    
+    // 2. Set the user state directly. No more timeouts, no second API call.
+    setUser(loggedInUser);
     navigate('/dashboard');
   };
-  
 
   const logout = async () => {
     try {
       await logoutAPI();
     } catch {}
-    localStorage.removeItem('isLoggedIn');
     setUser(null);
     navigate('/auth/login');
   };

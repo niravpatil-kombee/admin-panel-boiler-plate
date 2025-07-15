@@ -23,7 +23,7 @@ const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
   description: z.string().optional(),
-  parent: z.string().optional(),
+  // parent: z.string().optional(),
 });
 
 export default function CategoryFormPage() {
@@ -38,7 +38,7 @@ export default function CategoryFormPage() {
       name: "",
       slug: "",
       description: "",
-      parent: "",
+      // parent: "",
     },
     resolver: zodResolver(categorySchema),
   });
@@ -68,10 +68,10 @@ export default function CategoryFormPage() {
             name: category.name ?? "",
             slug: category.slug ?? "",
             description: category.description ?? "",
-            parent:
-              typeof category.parent === "object" && category.parent !== null && "_id" in category.parent
-                ? category.parent._id
-                : category.parent ?? "",
+            // parent:
+            //   typeof category.parent === "object" && category.parent !== null && "_id" in category.parent
+            //     ? category.parent._id
+            //     : category.parent ?? "",
           });
         })
         .finally(() => setLoading(false));
@@ -96,7 +96,7 @@ export default function CategoryFormPage() {
       name: data.name,
       slug: data.slug,
       description: data.description,
-      parent: data.parent || undefined,
+      // parent: data.parent || undefined,
     };
     if (isEdit && id) await updateCategoryAPI(id, payload);
     else await createCategoryAPI(payload);
@@ -175,7 +175,7 @@ export default function CategoryFormPage() {
       />
 
       {/* Parent Category Select */}
-      <Controller
+      {/* <Controller
         name="parent"
         control={control}
         render={({ field }) => (
@@ -196,7 +196,7 @@ export default function CategoryFormPage() {
               ))}
           </TextField>
         )}
-      />
+      /> */}
 
       <Box display="flex" justifyContent="flex-end">
         <Button variant="contained" type="submit" disabled={isSubmitting}>

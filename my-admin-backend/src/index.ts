@@ -42,7 +42,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge:  60 * 60 * 1000, 
+      maxAge: 60 * 60 * 1000, 
     },
   })
 );
@@ -53,42 +53,79 @@ app.use(passport.session());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// app.post("/api/refresh-session", (req, res) => {
+
+//   if (req.isAuthenticated()) {
+//     const user = req.user; // preserve user before regenerating
+
+//     //regenerate session
+//     req.session.regenerate((err) => {
+//       if (err) {
+//         return res.status(500).json({
+//           message: "Failed to refresh session",
+//         });
+//       }
+
+//       //Re-authenticate user
+//       req.login(req.user, (loginErr) => {
+//         if (loginErr) {
+//           return res.status(500).json({ message: "Failed to re-authenticate" });
+//         }
+
+//         //Reset the maxAge of the cookie
+//         req.session.cookie.maxAge = 60 * 60 * 1000; // 1 hr
+
+//         return res.json({
+//           message: "Session refreshed successfully",
+//           expiresIn: req.session.cookie.maxAge,
+//           user: req.user, 
+//         });
+//       });
+//     });
+//   } else {
+//     // console.log('Session expired or user not authenticated when calling /api/refresh-session');
+//     res.status(401).json({
+//       message: "User not authenticated",
+//     });
+//   }
+// });
+
+// In your main app file or auth routes file
+
 app.post("/api/refresh-session", (req, res) => {
+  
+  if (req.user) {
+    const user = req.user; // Securely preserve the user object.
 
-  if (req.isAuthenticated()) {
-    const user = req.user; // preserve user before regenerating
-
-    //regenerate session
     req.session.regenerate((err) => {
       if (err) {
-        return res.status(500).json({
-          message: "Failed to refresh session",
-        });
+        console.error("Error regenerating session:", err);
+        return res.status(500).json({ message: "Failed to refresh session" });
       }
 
-      //Re-authenticate user
-      req.login(req.user, (loginErr) => {
+      req.login(user, (loginErr) => {
         if (loginErr) {
+          console.error("Error re-authenticating after session refresh:", loginErr);
           return res.status(500).json({ message: "Failed to re-authenticate" });
         }
+        req.session.cookie.maxAge = 60 * 60 * 1000; // 1 hour
 
-        //Reset the maxAge of the cookie
-        req.session.cookie.maxAge = 30000; // 1 hr
-
-        return res.json({
+        return res.status(200).json({
           message: "Session refreshed successfully",
-          expiresIn: req.session.cookie.maxAge,
-          user: req.user, 
+          user: user,
         });
       });
     });
   } else {
-    console.log('Session expired or user not authenticated when calling /api/refresh-session');
+    // If there is no `req.user`, the user was never logged in or their session
+    // was completely destroyed (e.g., server restart, manual logout).
+    // In this case, they are truly unauthorized.
     res.status(401).json({
-      message: "User not authenticated",
+      message: "User not authenticated or session fully expired",
     });
   }
 });
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);

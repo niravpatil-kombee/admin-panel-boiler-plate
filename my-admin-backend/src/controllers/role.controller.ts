@@ -56,7 +56,8 @@ export const getOne = async (req: Request, res: Response) => {
               Id: roleId,
             });
           }
-        const role = await Role.findById(req.params.id).exec();
+        // Populate permissions when fetching a role by ID
+        const role = await Role.findById(req.params.id).populate('permissions').exec();
         if (!role) {
             return res.status(404).json({
               message: "Role not found",

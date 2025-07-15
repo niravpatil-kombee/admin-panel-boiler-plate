@@ -1,13 +1,18 @@
-import axios from 'axios';
-import { refreshSessionAPI } from '../services/auth.api';
+import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5001/api',
-  withCredentials: true, // Send cookies
+  baseURL: "http://localhost:5001/api",
+  withCredentials: true, // This is CRITICAL for sending/receiving session cookies
 });
 
+// 2. A flag to prevent multiple refresh calls from firing simultaneously
 let isRefreshing = false;
-let failedQueue: any[] = [];
+
+// 3. A queue to hold requests that failed and are waiting for a new session
+let failedQueue: {
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}[] = [];
 
 const processQueue = (error: any, token: any = null) => {
   failedQueue.forEach((prom) => {
@@ -20,17 +25,26 @@ const processQueue = (error: any, token: any = null) => {
   failedQueue = [];
 };
 
+// 4. The Response Interceptor - This is where the magic happens
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip refresh-session if it's the initial auth check
+    // First, check if this is the special initial auth call.
+    // If our custom header is present, we should not attempt to refresh.
+    // We just reject the promise immediately.
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry &&
-      originalRequest.headers['x-initial-auth'] !== 'true'
+      originalRequest.headers["X-No-Retry-On-401"] === "true"
     ) {
+      return Promise.reject(error);
+    }
+
+    // This is the existing logic for all *other* 401 errors
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -43,14 +57,13 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        console.log('Attempting to refresh session...');
-        await refreshSessionAPI();
-        console.log('Session refreshed!');
-        processQueue(null);
-        return axiosInstance(originalRequest); // Retry original
+        await axiosInstance.post("/refresh-session");
+        processQueue(null, null);
+        return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.error('Refresh failed:', refreshError);
+        console.error("Session refresh failed:", refreshError);
         processQueue(refreshError, null);
+        // Redirect to login page
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -60,6 +73,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 
 export default axiosInstance;

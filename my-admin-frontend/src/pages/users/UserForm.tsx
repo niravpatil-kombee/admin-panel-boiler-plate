@@ -23,7 +23,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 const getUserSchema = (isEdit: boolean) => z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    // Only require password for edit, not for create
+    // Password is optional and has no validation, always present
     password: z.string().optional(),
     role: z.string().min(1, 'Role is required'),
 });
@@ -56,7 +56,10 @@ export default function UserFormPage() {
                     reset({
                         name: userData.name,
                         email: userData.email,
-                        role: userData.role._id,
+                        role:
+                            typeof userData.role === 'object' && userData.role !== null && '_id' in userData.role
+                                ? (userData.role as any)._id
+                                : userData.role,
                         password: '',
                     });
                 }
@@ -74,14 +77,22 @@ export default function UserFormPage() {
     const onSubmit: SubmitHandler<UserFormSchema> = async (data) => {
         try {
             if (isEdit && id) {
-                const updateData: Partial<UserFormData> = { ...data };
-                if (!updateData.password) {
-                    delete updateData.password;
-                }
+                // Destructure password and cast if present
+                const { password, ...rest } = data;
+                const updateData: Partial<UserFormData> = {
+                    ...rest,
+                    ...(password !== undefined && password !== '' ? { password: String(password) } : {})
+                };
                 await updateUserAPI(id, updateData);
                 enqueueSnackbar('User updated successfully!', { variant: 'success' });
             } else {
-                await createUserAPI(data);
+                // Destructure password and cast to string
+                const { password, ...rest } = data;
+                const createData: UserFormData = {
+                    ...rest,
+                    password: String(password)
+                };
+                await createUserAPI(createData);
                 enqueueSnackbar('User created successfully!', { variant: 'success' });
             }
             navigate('/users');
@@ -144,25 +155,23 @@ export default function UserFormPage() {
                             />
                         </Box>
 
-                        {/* Only show password field for edit */}
-                        {isEdit && (
-                            <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)' } }}>
-                                <Controller
-                                    name="password"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField
-                                            {...field}
-                                            type="password"
-                                            label="Password"
-                                            fullWidth
-                                            error={!!errors.password}
-                                            helperText={!!errors.password ? errors.password?.message : 'Leave blank to keep current password'}
-                                        />
-                                    )}
-                                />
-                            </Box>
-                        )}
+                        {/* Only show password field for create */}
+                        <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)' } }}>
+                            <Controller
+                                name="password"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        type="password"
+                                        label="Password"
+                                        fullWidth
+                                        error={!!errors.password}
+                                        helperText={errors.password?.message}
+                                    />
+                                )}
+                            />
+                        </Box>
                     </Box>
 
                     <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
