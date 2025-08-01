@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { Inventory } from '../types/product';
 
 export interface GetInventoryListResponse {
@@ -12,26 +13,17 @@ export interface GetInventoryByIdResponse {
   inventory: Inventory;
 }
 
-export const getInventoryListAPI = async (): Promise<GetInventoryListResponse> => {
-  const { data } = await axios.get('/inventory');
-  return data;
-};
+export const getInventoryListAPI = (): Promise<GetInventoryListResponse> =>
+  apiHandler(() => axios.get('/inventory').then(res => res.data));
 
-export const getInventoryByIdAPI = async (id: string): Promise<GetInventoryByIdResponse> => {
-  const { data } = await axios.get(`/inventory/${id}`);
-  return data;
-};
+export const getInventoryByIdAPI = (id: string): Promise<GetInventoryByIdResponse> =>
+  apiHandler(() => axios.get(`/inventory/${id}`).then(res => res.data));
 
-export const createInventoryAPI = async (inventory: Partial<Inventory>): Promise<Inventory> => {
-  const { data } = await axios.post('/inventory', inventory);
-  return data;
-};
+export const createInventoryAPI = (inventory: Partial<Inventory>): Promise<Inventory> =>
+  apiHandler(() => axios.post('/inventory', inventory).then(res => res.data));
 
-export const updateInventoryAPI = async (id: string, inventory: Partial<Inventory>): Promise<Inventory> => {
-  const { data } = await axios.put(`/inventory/${id}`, inventory);
-  return data;
-};
+export const updateInventoryAPI = (id: string, inventory: Partial<Inventory>): Promise<Inventory> =>
+  apiHandler(() => axios.put(`/inventory/${id}`, inventory).then(res => res.data));
 
-export const deleteInventoryAPI = async (id: string): Promise<void> => {
-  await axios.delete(`/inventory/${id}`);
-}; 
+export const deleteInventoryAPI = (id: string): Promise<void> =>
+  apiHandler(() => axios.delete(`/inventory/${id}`).then(() => undefined)); 

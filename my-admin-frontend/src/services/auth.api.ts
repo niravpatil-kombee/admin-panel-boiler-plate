@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { LoginCredentials, RegisterData, User } from '../types/auth';
 
 export interface GetUsersResponse {
@@ -6,6 +7,7 @@ export interface GetUsersResponse {
   totalUsers: number;
   users: User[];
 }
+
 export interface UserFormData {
   _id?: string;
   name: string;
@@ -14,65 +16,35 @@ export interface UserFormData {
   role: string;
 }
 
-export const loginAPI = async (credentials: LoginCredentials) => {
-  const { data } = await axios.post('/auth/login', credentials);
-  return data;
-};
+export const loginAPI = (credentials: LoginCredentials) =>
+  apiHandler(() => axios.post('/auth/login', credentials).then(res => res.data));
 
-export const registerAPI = async (userData: RegisterData) => {
-  const { data } = await axios.post('/auth/register', userData);
-  return data;
-};
+export const registerAPI = (userData: RegisterData) =>
+  apiHandler(() => axios.post('/auth/register', userData).then(res => res.data));
 
-export const getMeAPI = async () => {
-  const { data } = await axios.get('/auth/current-user', {
-    headers: {
-      // This is our special signal to the interceptor
-      'X-No-Retry-On-401': 'true' 
-    }
-  });
-  return data;
-};
+export const getMeAPI = () =>
+  apiHandler(() => axios.get('/auth/current-user').then(res => res.data));
 
-export const logoutAPI = async () => {
-  const { data } = await axios.post('/auth/logout');
-  return data;
-};
+export const logoutAPI = () =>
+  apiHandler(() => axios.post('/auth/logout').then(res => res.data));
 
-export const forgotPasswordAPI = async (email: string) => {
-  const { data } = await axios.post('/auth/forgot-password', { email });
-  return data;
-};
+export const forgotPasswordAPI = (email: string) =>
+  apiHandler(() => axios.post('/auth/forgot-password', { email }).then(res => res.data));
 
-export const resetPasswordAPI = async (token: string, newPassword: string) => {
-  const { data } = await axios.post(`/auth/reset-password/${token}`, { newPassword });
-  return data;
-};
+export const resetPasswordAPI = (token: string, newPassword: string) =>
+  apiHandler(() => axios.post(`/auth/reset-password/${token}`, { newPassword }).then(res => res.data));
 
+export const getUsersAPI = (): Promise<GetUsersResponse> =>
+  apiHandler(() => axios.get('/users').then(res => res.data));
 
-export const getUsersAPI = async (): Promise<GetUsersResponse> => {
-  const { data } = await axios.get('/users');
-  return data;
-};
+export const deleteUserAPI = (id: string): Promise<void> =>
+  apiHandler(() => axios.delete(`/users/${id}`).then(() => undefined));
 
-export const deleteUserAPI = async (id: string): Promise<void> => {
-  await axios.delete(`/users/${id}`);
-};
+export const getUserByIdAPI = (id: string): Promise<User> =>
+  apiHandler(() => axios.get(`/users/${id}`).then(res => res.data.user));
 
-export const getUserByIdAPI = async (id: string): Promise<User> => {
-  const { data } = await axios.get(`/users/${id}`);
-  return data.user;
-};
+export const createUserAPI = (userData: UserFormData): Promise<User> =>
+  apiHandler(() => axios.post('/users', userData).then(res => res.data));
 
-export const createUserAPI = async (userData: UserFormData): Promise<User> => {
-  const { data } = await axios.post('/users', userData);
-  return data;
-};
-
-export const updateUserAPI = async (id: string, userData: Partial<UserFormData>): Promise<User> => {
-  const { data } = await axios.put(`/users/${id}`, userData);
-  return data;
-};
-
-
-
+export const updateUserAPI = (id: string, userData: Partial<UserFormData>): Promise<User> =>
+  apiHandler(() => axios.put(`/users/${id}`, userData).then(res => res.data));

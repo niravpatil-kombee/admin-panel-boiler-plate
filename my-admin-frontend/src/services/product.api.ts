@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { Product } from '../types/product';
 
 export interface GetProductsResponse {
@@ -7,30 +8,21 @@ export interface GetProductsResponse {
   products: Product[];
 }
 
-export const getProductsAPI = async (): Promise<GetProductsResponse> => {
-  const { data } = await axios.get('/product');
-  return data;
-};
+export const getProductsAPI = (): Promise<GetProductsResponse> =>
+  apiHandler(() => axios.get('/product').then(res => res.data));
 
-export const getProductByIdAPI = async (id: string): Promise<Product> => {
-  const { data } = await axios.get<{ product: Product }>(`/product/${id}`);
-  return data.product;
-};
+export const getProductByIdAPI = (id: string): Promise<Product> =>
+  apiHandler(() => axios.get<{ product: Product }>(`/product/${id}`).then(res => res.data.product));
 
-export const createProductAPI = async (formData: FormData): Promise<Product> => {
-  const { data } = await axios.post<{ product: Product }>('/product', formData, {
+export const createProductAPI = (formData: FormData): Promise<Product> =>
+  apiHandler(() => axios.post<{ product: Product }>('/product', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  });
-  return data.product;
-};
+  }).then(res => res.data.product));
 
-export const updateProductAPI = async (id: string, formData: FormData): Promise<Product> => {
-  const { data } = await axios.put<{ product: Product }>(`/product/${id}`, formData, {
+export const updateProductAPI = (id: string, formData: FormData): Promise<Product> =>
+  apiHandler(() => axios.put<{ product: Product }>(`/product/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  });
-  return data.product;
-};
+  }).then(res => res.data.product));
 
-export const deleteProductAPI = async (id: string): Promise<void> => {
-  await axios.delete(`/product/${id}`);
-};
+export const deleteProductAPI = (id: string): Promise<void> =>
+  apiHandler(() => axios.delete(`/product/${id}`).then(() => undefined));

@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { Role } from '../types/role';
 
 export interface GetRolesResponse {
@@ -7,26 +8,17 @@ export interface GetRolesResponse {
     roles: Role[];
 }
 
-export const getRolesAPI = async (): Promise<GetRolesResponse> => {
-    const { data } = await axios.get('/roles');
-    return data;
-};
+export const getRolesAPI = (): Promise<GetRolesResponse> =>
+    apiHandler(() => axios.get('/roles').then(res => res.data));
 
-export const getRoleByIdAPI = async (id: string): Promise<Role> => {
-    const { data } = await axios.get(`/roles/${id}`);
-    return data.role;
-};
+export const getRoleByIdAPI = (id: string): Promise<Role> =>
+    apiHandler(() => axios.get(`/roles/${id}`).then(res => res.data.role));
 
-export const createRoleAPI = async (roleData: Partial<Role>): Promise<Role> => {
-    const { data } = await axios.post('/roles', roleData);
-    return data;
-};
+export const createRoleAPI = (roleData: Partial<Role>): Promise<Role> =>
+    apiHandler(() => axios.post('/roles', roleData).then(res => res.data));
 
-export const updateRoleAPI = async (id: string, roleData: Partial<Role>): Promise<Role> => {
-    const { data } = await axios.put(`/roles/${id}`, roleData);
-    return data;
-};
+export const updateRoleAPI = (id: string, roleData: Partial<Role>): Promise<Role> =>
+    apiHandler(() => axios.put(`/roles/${id}`, roleData).then(res => res.data));
 
-export const deleteRoleAPI = async (id: string): Promise<void> => {
-    await axios.delete(`/roles/${id}`);
-};
+export const deleteRoleAPI = (id: string): Promise<void> =>
+    apiHandler(() => axios.delete(`/roles/${id}`).then(() => undefined));

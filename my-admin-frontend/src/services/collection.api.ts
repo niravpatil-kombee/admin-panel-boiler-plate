@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { Collection } from '../types/product';
 
 export interface GetCollectionsResponse {
@@ -7,26 +8,17 @@ export interface GetCollectionsResponse {
   collections: Collection[];
 }
 
-export const getCollectionsAPI = async (): Promise<GetCollectionsResponse> => {
-  const { data } = await axios.get('/collections');
-  return data;
-};
+export const getCollectionsAPI = (): Promise<GetCollectionsResponse> =>
+  apiHandler(() => axios.get('/collections').then(res => res.data));
 
-export const getCollectionByIdAPI = async (id: string): Promise<Collection> => {
-  const { data } = await axios.get(`/collections/${id}`);
-  return data;
-};
+export const getCollectionByIdAPI = (id: string): Promise<Collection> =>
+  apiHandler(() => axios.get(`/collections/${id}`).then(res => res.data));
 
-export const createCollectionAPI = async (collection: Partial<Collection>): Promise<Collection> => {
-  const { data } = await axios.post('/collections', collection);
-  return data;
-};
+export const createCollectionAPI = (collection: Partial<Collection>): Promise<Collection> =>
+  apiHandler(() => axios.post('/collections', collection).then(res => res.data));
 
-export const updateCollectionAPI = async (id: string, collection: Partial<Collection>): Promise<Collection> => {
-  const { data } = await axios.put(`/collections/${id}`, collection);
-  return data;
-};
+export const updateCollectionAPI = (id: string, collection: Partial<Collection>): Promise<Collection> =>
+  apiHandler(() => axios.put(`/collections/${id}`, collection).then(res => res.data));
 
-export const deleteCollectionAPI = async (id: string): Promise<void> => {
-  await axios.delete(`/collections/${id}`);
-}; 
+export const deleteCollectionAPI = (id: string): Promise<void> =>
+  apiHandler(() => axios.delete(`/collections/${id}`).then(() => undefined)); 

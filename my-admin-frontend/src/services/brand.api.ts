@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 import type { Brand } from '../types/product';
 
 export interface GetBrandsResponse {
@@ -12,26 +13,17 @@ export interface GetBrandsResponseById {
   brand: Brand; 
 }
 
-export const getBrandsAPI = async (): Promise<GetBrandsResponse> => {
-  const { data } = await axios.get('/brands');
-  return data;
-};
+export const getBrandsAPI = (): Promise<GetBrandsResponse> =>
+  apiHandler(() => axios.get('/brands').then(res => res.data));
 
-export const getBrandByIdAPI = async (id: string): Promise<GetBrandsResponseById> => {
-  const { data } = await axios.get(`/brands/${id}`);
-  return data;
-};
+export const getBrandByIdAPI = (id: string): Promise<GetBrandsResponseById> =>
+  apiHandler(() => axios.get(`/brands/${id}`).then(res => res.data));
 
-export const createBrandAPI = async (brand: Partial<Brand>): Promise<Brand> => {
-  const { data } = await axios.post('/brands', brand);
-  return data;
-};
+export const createBrandAPI = (brand: Partial<Brand>): Promise<Brand> =>
+  apiHandler(() => axios.post('/brands', brand).then(res => res.data));
 
-export const updateBrandAPI = async (id: string, brand: Partial<Brand>): Promise<Brand> => {
-  const { data } = await axios.put(`/brands/${id}`, brand);
-  return data;
-};
+export const updateBrandAPI = (id: string, brand: Partial<Brand>): Promise<Brand> =>
+  apiHandler(() => axios.put(`/brands/${id}`, brand).then(res => res.data));
 
-export const deleteBrandAPI = async (id: string): Promise<void> => {
-  await axios.delete(`/brands/${id}`);
-}; 
+export const deleteBrandAPI = (id: string): Promise<void> =>
+  apiHandler(() => axios.delete(`/brands/${id}`).then(() => undefined)); 

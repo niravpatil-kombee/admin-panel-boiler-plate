@@ -1,4 +1,5 @@
 import axios from '../utils/axios';
+import { apiHandler } from '../utils/apiHandler';
 
 export interface GetPermissionsResponse {
     message: string;
@@ -6,7 +7,5 @@ export interface GetPermissionsResponse {
     permissions: any[];
 }
 
-export const getPermissionsAPI = async (): Promise<GetPermissionsResponse> => {
-    const { data } = await axios.get('/permissions');
-    return data;
-};
+export const getPermissionsAPI = (): Promise<GetPermissionsResponse> =>
+    apiHandler(() => axios.get('/permissions').then(res => res.data));
