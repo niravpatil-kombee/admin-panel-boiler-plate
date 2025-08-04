@@ -3,8 +3,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import passport from "passport";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
+import statusMonitor from "express-status-monitor";
 import connectDB from "./config/database";
 import "./config/passport";
+import { requestLogger, performanceMonitor, errorTracker } from "./middlewares/monitoring";
 import authRoutes from "./routes/auth.routes";
 import roleRoutes from "./routes/role.routes";
 import permissionRoutes from "./routes/permission.routes";
@@ -30,6 +33,29 @@ const app: Application = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Add Morgan HTTP request logging
+app.use(morgan('combined'));
+
+// Add custom monitoring middleware
+app.use(requestLogger);
+app.use(performanceMonitor);
+
+// Add Express Status Monitor for real-time performance monitoring
+app.use(statusMonitor({
+  title: 'Admin Backend Monitor',
+  path: '/status',
+  spans: [{
+    interval: 1,     // Every 1 second
+    retention: 60    // Keep 60 data points
+  }, {
+    interval: 5,     // Every 5 seconds
+    retention: 60
+  }, {
+    interval: 15,    // Every 15 seconds
+    retention: 60
+  }]
+}));
 
 app.use(
   cors({
@@ -85,6 +111,9 @@ app.use("/api/inventory", inventoryRoute);
 app.get("/api/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "UP", message: "Server is running healthy" });
 });
+
+// Add error tracking middleware (must be last)
+app.use(errorTracker);
 
 connectDB();
 

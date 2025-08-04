@@ -13,6 +13,12 @@ const connectDB = async () => {
 
         await mongoose.connect(mongoURI);
 
+        // Enable database query logging in development
+        if (process.env.NODE_ENV === 'development') {
+            mongoose.set('debug', true);
+            console.log("Database query logging enabled for development");
+        }
+
         console.log("MongoDB Connected Successfully");
     } catch (error) {
         console.error("MongoDB Connection Failed:", error);
