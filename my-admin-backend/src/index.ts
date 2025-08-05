@@ -64,6 +64,10 @@ app.use(
   })
 );
 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Required to send secure cookies via Railway
+}
+
 // Session config with rolling
 app.use(
   session({
