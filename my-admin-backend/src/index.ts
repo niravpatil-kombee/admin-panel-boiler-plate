@@ -20,6 +20,7 @@ import attributesRoute from "./routes/attribute.routes"
 import warehouseRoute from "./routes/warehouse.routes"
 import inventoryRoute from "./routes/inventory.routes"
 import session from "express-session";
+import MongoStore from "connect-mongo";
 import path from "path";
 
 
@@ -69,17 +70,20 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 
-// Session config with rolling
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "super-secret-key",
     resave: false,
     saveUninitialized: false,
-    rolling: true, // ✅ refresh session on every request
+    rolling: true,  //refresh session on every request
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI, // ✅ Use your real MongoDB URI
+      collectionName: 'sessions',
+    }),
     cookie: {
-      maxAge: 60 * 60 * 1000, // 1 hr
+      maxAge: 60 * 60 * 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // use true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     },
   })
