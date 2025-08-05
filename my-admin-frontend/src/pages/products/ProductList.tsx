@@ -17,6 +17,8 @@ import type { Product } from "../../types/product";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import PageHeader from "../../components/PageHeader";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function ProductListPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export default function ProductListPage() {
     if (imageAttr) {
       return imageAttr.value.startsWith("http")
         ? imageAttr.value
-        : `http://localhost:5001/${imageAttr.value.replace(/\\/g, "/")}`;
+        : `${API_URL}/${imageAttr.value.replace(/\\/g, "/")}`;
     }
   
     // Fallback to variant image
@@ -87,7 +89,7 @@ export default function ProductListPage() {
     if (typeof variantImg === "string") {
       return variantImg.startsWith("http")
         ? variantImg
-        : `http://localhost:5001/${variantImg.replace(/\\/g, "/")}`;
+        : `${API_URL}/api/${variantImg.replace(/\\/g, "/")}`;
     }
   
     // Final fallback
