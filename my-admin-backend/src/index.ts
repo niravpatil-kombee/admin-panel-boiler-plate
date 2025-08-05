@@ -59,7 +59,7 @@ app.use(statusMonitor({
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "https://fullstack-app-alpha.vercel.app",
     credentials: true,
   })
 );
@@ -67,15 +67,15 @@ app.use(
 // Session config with rolling
 app.use(
   session({
-    secret: "super-secret-key",
+    secret: process.env.SESSION_SECRET || "super-secret-key",
     resave: false,
     saveUninitialized: false,
     rolling: true, // ✅ refresh session on every request
     cookie: {
       maxAge: 60 * 60 * 1000, // 1 hr
       httpOnly: true,
-      secure: false, // use true in production with HTTPS
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === 'production', // use true in production with HTTPS
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     },
   })
 );

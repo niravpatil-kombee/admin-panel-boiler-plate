@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance  = axios.create({
-  baseURL: "http://localhost:5001/api",
+  baseURL: "https://fullstack-app-production-7624.up.railway.app",
   withCredentials: true, // This is for sending/receiving session cookies
 });
 
