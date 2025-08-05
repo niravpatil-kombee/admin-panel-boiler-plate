@@ -32,6 +32,6 @@ const ProductSchema = new Schema<IProduct>({
   isPublished: { type: Boolean, default: false },
   productAttributes: [AttributeValueSchema],
   variants: [VariantSchema],
-}, { timestamps: true });
+}, { timestamps: true, suppressReservedKeysWarning: true });
 
 export default model<IProduct>('Product', ProductSchema);
