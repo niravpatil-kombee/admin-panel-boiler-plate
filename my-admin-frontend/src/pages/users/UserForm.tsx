@@ -20,7 +20,7 @@ import type { Role } from '../../types/role';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-const getUserSchema = (isEdit: boolean) => z.object({
+const getUserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
     // Password is optional and has no validation, always present
@@ -28,19 +28,19 @@ const getUserSchema = (isEdit: boolean) => z.object({
     role: z.string().min(1, 'Role is required'),
 });
 
-type UserFormSchema = z.infer<ReturnType<typeof getUserSchema>>;
+type UserFormSchema = z.infer<typeof getUserSchema>;
 
 export default function UserFormPage() {
     const { id } = useParams<{ id: string }>();
+    const isEdit = !!id;
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
-    const isEdit = !!id;
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(false);
 
     const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<UserFormSchema>({
-        resolver: zodResolver(getUserSchema(isEdit)),
+        resolver: zodResolver(getUserSchema),
         defaultValues: { name: '', email: '', password: '', role: '' },
     });
 

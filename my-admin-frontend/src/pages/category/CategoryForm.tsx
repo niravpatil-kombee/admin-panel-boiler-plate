@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
@@ -14,7 +13,6 @@ import {
   createCategoryAPI,
   getCategoryByIdAPI,
   updateCategoryAPI,
-  getCategoriesAPI,
 } from "../../services/category.api";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +29,6 @@ export default function CategoryFormPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const form = useForm<z.infer<typeof categorySchema>>({
     defaultValues: {
@@ -52,14 +49,8 @@ export default function CategoryFormPage() {
   } = form;
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const nameValue = watch('name');
-  const slugValue = watch('slug');
 
   useEffect(() => {
-    // Fetch all categories
-    getCategoriesAPI()
-      .then((data) => setCategories(data.categories))
-      .catch((err) => console.error("Failed to fetch categories:", err));
-  
     if (id) {
       setLoading(true);
       getCategoryByIdAPI(id)

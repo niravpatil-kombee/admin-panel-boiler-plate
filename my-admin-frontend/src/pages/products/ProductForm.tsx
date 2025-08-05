@@ -77,7 +77,6 @@ export default function ProductFormPage() {
   });
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const nameValue = form.watch('name');
-  const slugValue = form.watch('slug');
 
   const {
     control,

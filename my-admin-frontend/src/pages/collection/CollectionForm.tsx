@@ -34,7 +34,7 @@ export default function CollectionFormPage() {
   const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
 
   useEffect(() => {
-    getProductsAPI().then((data) => setProducts(data));
+    getProductsAPI().then((data) => setProducts(data.products || []));
     if (isEdit && id) {
       setLoading(true);
       getCollectionByIdAPI(id)

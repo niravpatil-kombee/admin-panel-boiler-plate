@@ -24,7 +24,6 @@ export default function BrandFormPage() {
 
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const nameValue = watch('name');
-  const slugValue = watch('slug');
 
   useEffect(() => {
     if (isEdit && id) {
