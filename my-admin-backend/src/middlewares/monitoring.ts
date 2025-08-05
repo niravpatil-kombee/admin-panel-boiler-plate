@@ -9,7 +9,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   
   // Override res.end to log when request finishes
   const originalEnd = res.end;
-  res.end = function(chunk?: any, encoding?: any) {
+  res.end = function(chunk?: any, encoding?: any): Response {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
     
@@ -22,7 +22,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
       `${statusColor}[${new Date().toISOString()}] ${req.method} ${req.path} - ${statusCode} - ${duration}ms\x1b[0m`
     );
     
-    originalEnd.call(this, chunk, encoding);
+    return originalEnd.call(this, chunk, encoding);
   };
   
   next();
