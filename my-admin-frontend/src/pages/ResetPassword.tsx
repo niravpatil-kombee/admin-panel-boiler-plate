@@ -6,9 +6,10 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useSnackbar } from 'notistack';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { resetPasswordAPI } from '../services/auth.api';
+import useAuth from '../hooks/useAuth';
 
 const resetSchema = z.object({
     newPassword: z.string().min(6, 'Password must be at least 6 characters'),
@@ -21,6 +22,7 @@ const resetSchema = z.object({
 type ResetSchema = z.infer<typeof resetSchema>;
 
 export default function ResetPasswordPage() {
+    const { isAuthenticated } = useAuth();
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
     const { token } = useParams<{ token: string }>();
@@ -34,6 +36,13 @@ export default function ResetPasswordPage() {
     const [submitted, setSubmitted] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    // Redirect if user is already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard');
+        }
+    }, [isAuthenticated, navigate]);
 
     const onSubmit: SubmitHandler<ResetSchema> = async (data) => {
         if (!token) {
@@ -52,6 +61,11 @@ export default function ResetPasswordPage() {
             enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password', { variant: 'error' });
         }
     };
+
+    // Don't render form if user is authenticated
+    if (isAuthenticated) {
+        return null; // or a loading spinner
+    }
 
     return (
         <Container component="main" maxWidth="xs">

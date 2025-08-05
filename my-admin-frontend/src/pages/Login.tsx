@@ -7,7 +7,7 @@ import useAuth from '../hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
@@ -21,13 +21,20 @@ const loginSchema = z.object({
 type LoginSchema = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginSchema>({
         resolver: zodResolver(loginSchema),
     });
     const [showPassword, setShowPassword] = useState(false);
+
+    // Redirect if user is already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard');
+        }
+    }, [isAuthenticated, navigate]);
 
     const onSubmit: SubmitHandler<LoginSchema> = async (data) => {
         try {
@@ -38,6 +45,11 @@ export default function LoginPage() {
             enqueueSnackbar(err?.response?.data?.message || 'Login failed', { variant: 'error' });
         }
     };
+
+    // Don't render login form if user is authenticated
+    if (isAuthenticated) {
+        return null; // or a loading spinner
+    }
 
     return (
         <Container component="main" maxWidth="xs">

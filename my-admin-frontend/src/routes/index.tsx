@@ -3,6 +3,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import LoginPage from '../pages/Login';
 import DashboardPage from '../pages/Dashboard';
 import ProtectedRoute from './ProtectedRoute';
+import PublicRoute from './PublicRoute';
 import UserListPage from '../pages/users/UserList';
 import RoleListPage from '../pages/roles/RoleList';
 import ProductListPage from '../pages/products/ProductList';
@@ -29,15 +30,32 @@ export default function AppRouter() {
         {
             path: '/auth',
             children: [
-                { path: 'login', element: <LoginPage /> },
-               
-                { path: 'forgot-password', element: <ForgotPasswordPage /> },
+                { 
+                    path: 'login', 
+                    element: (
+                        <PublicRoute>
+                            <LoginPage />
+                        </PublicRoute>
+                    ) 
+                },
+                { 
+                    path: 'forgot-password', 
+                    element: (
+                        <PublicRoute>
+                            <ForgotPasswordPage />
+                        </PublicRoute>
+                    ) 
+                },
                 { path: '*', element: <Navigate to="/auth/login" replace /> }
             ]
         },
         {
             path: '/reset-password/:token',
-            element: <ResetPasswordPage />
+            element: (
+                <PublicRoute>
+                    <ResetPasswordPage />
+                </PublicRoute>
+            )
         },
         {
             path: '/',
